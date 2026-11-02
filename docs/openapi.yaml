@@ -1,0 +1,321 @@
+openapi: 3.0.3
+info:
+  title: SkillBridge API
+  version: 0.1.0
+  description: |
+    API contract, phase 1: authentication, user profile and skills catalogue.
+    Any change to this file goes through a Pull Request approved by both team members.
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development
+
+tags:
+  - name: Auth
+  - name: Users
+  - name: Skills
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Create an account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: Email already used
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Sign in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          description: Wrong email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get the profile of the signed-in user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The current user's profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      tags: [Users]
+      summary: Update the profile of the signed-in user
+      description: |
+        Replaces the editable profile fields and the full list of skills
+        (teach / learn) of the current user.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /skills:
+    get:
+      tags: [Skills]
+      summary: List the skills catalogue
+      description: Public list of skills, optionally filtered by category or text.
+      parameters:
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/SkillCategory'
+        - name: q
+          in: query
+          description: Text search on the skill name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of skills
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Skill'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    SkillCategory:
+      type: string
+      enum:
+        - tech
+        - design
+        - languages
+        - diy
+        - daily_life
+        - academic
+        - music_arts
+        - career
+
+    SkillLevel:
+      type: string
+      enum: [beginner, intermediate, advanced]
+
+    SkillMode:
+      type: string
+      enum: [online, in_person, both]
+
+    Skill:
+      type: object
+      required: [id, name, category]
+      properties:
+        id:
+          type: integer
+          example: 12
+        name:
+          type: string
+          example: Python
+        category:
+          $ref: '#/components/schemas/SkillCategory'
+
+    UserSkill:
+      type: object
+      required: [skillId, type, level, mode]
+      properties:
+        skillId:
+          type: integer
+          example: 12
+        type:
+          type: string
+          enum: [teach, learn]
+        level:
+          $ref: '#/components/schemas/SkillLevel'
+        mode:
+          $ref: '#/components/schemas/SkillMode'
+        skill:
+          allOf:
+            - $ref: '#/components/schemas/Skill'
+          readOnly: true
+
+    User:
+      type: object
+      required: [id, name, email, skills]
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Sarah Ben Ali
+        email:
+          type: string
+          format: email
+        bio:
+          type: string
+          nullable: true
+        university:
+          type: string
+          nullable: true
+          example: SUP'COM
+        year:
+          type: integer
+          nullable: true
+          example: 2
+        city:
+          type: string
+          nullable: true
+          example: Tunis
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSkill'
+
+    RegisterRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          format: password
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+          description: 'JWT to send in the header Authorization, as: Bearer <token>'
+        user:
+          $ref: '#/components/schemas/User'
+
+    UpdateProfileRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 2
+        bio:
+          type: string
+          maxLength: 500
+          nullable: true
+        university:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSkill'
+
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          example: Email already used
+        details:
+          type: array
+          description: Field-level errors, when relevant
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
