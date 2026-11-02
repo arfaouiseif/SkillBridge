@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SkillCategory {
+  tech
+  design
+  languages
+  diy
+  daily_life
+  academic
+  music_arts
+  career
+}
+
+enum SkillLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum SkillMode {
+  online
+  in_person
+  both
+}
+
+enum SkillType {
+  teach
+  learn
+}
+
+model User {
+  id           Int         @id @default(autoincrement())
+  name         String
+  email        String      @unique
+  passwordHash String      @map("password_hash")
+  bio          String?
+  university   String?
+  year         Int?
+  city         String?
+  createdAt    DateTime    @default(now()) @map("created_at")
+  skills       UserSkill[]
+
+  @@map("users")
+}
+
+model Skill {
+  id       Int           @id @default(autoincrement())
+  name     String        @unique
+  category SkillCategory
+  users    UserSkill[]
+
+  @@map("skills")
+}
+
+model UserSkill {
+  userId  Int        @map("user_id")
+  skillId Int        @map("skill_id")
+  type    SkillType
+  level   SkillLevel
+  mode    SkillMode
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill   Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([userId, skillId, type])
+  @@map("user_skills")
+}
