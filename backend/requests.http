@@ -1,0 +1,39 @@
+@baseUrl = http://localhost:3000/api
+
+### Register a new user (expect 201)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "Password123!"
+}
+
+### Register with invalid data (expect 400)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "T",
+  "email": "not-an-email",
+  "password": "short"
+}
+
+### Login with a seeded user (expect 200, with skills)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "sarah.ben.ali@example.com",
+  "password": "Password123!"
+}
+
+### Login with a wrong password (expect 401)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "sarah.ben.ali@example.com",
+  "password": "wrong-password"
+}
