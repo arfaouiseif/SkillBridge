@@ -1,0 +1,31 @@
+### Login to get a token (send this one first)
+# @name login
+@baseUrl = http://localhost:3000/api
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "sarah.ben.ali@example.com",
+  "password": "Password123!"
+}
+
+
+### Get my profile (expect 200, Sarah with her skills)
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{login.response.body.token}}
+
+### Get my profile without a token (expect 401)
+GET {{baseUrl}}/users/me
+
+### Get my profile with a fake token (expect 401)
+GET {{baseUrl}}/users/me
+Authorization: Bearer not-a-real-token
+
+### All skills (expect 37)
+GET {{baseUrl}}/skills
+
+### Skills filtered by category (expect 5 DIY skills)
+GET {{baseUrl}}/skills?category=diy
+
+### Skills filtered by text (expect Python)
+GET {{baseUrl}}/skills?q=py
