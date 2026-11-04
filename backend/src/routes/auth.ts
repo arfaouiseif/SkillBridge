@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { prisma } from '../prisma';
 import { signToken } from '../token';
 import { toUserResponse, userInclude } from '../user';
+import { validationError } from '../validation';
+
 
 const registerSchema = z.object({
   name: z.string().trim().min(2),
@@ -16,16 +18,7 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-// Builds the 400 body described in openapi.yaml
-function validationError(error: z.ZodError) {
-  return {
-    message: 'Invalid input',
-    details: error.issues.map((issue) => ({
-      field: issue.path.join('.'),
-      message: issue.message,
-    })),
-  };
-}
+
 
 export const authRouter = Router();
 
