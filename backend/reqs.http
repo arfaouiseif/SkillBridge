@@ -29,3 +29,68 @@ GET {{baseUrl}}/skills?category=diy
 
 ### Skills filtered by text (expect Python)
 GET {{baseUrl}}/skills?q=py
+
+
+### Update my profile and skills (expect 200, send the login request first)
+PUT {{baseUrl}}/users/me
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Sarah Ben Ali",
+  "bio": "Updated bio from the API",
+  "university": "SUP'COM",
+  "year": 2,
+  "city": "Tunis",
+  "skills": [
+    { "skillId": 8, "type": "teach", "level": "advanced", "mode": "online" },
+    { "skillId": 1, "type": "learn", "level": "beginner", "mode": "online" }
+  ]
+}
+
+### Check that the changes were saved (expect the new bio and 2 skills)
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{login.response.body.token}}
+
+### Unknown skill (expect 400)
+PUT {{baseUrl}}/users/me
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Sarah Ben Ali",
+  "skills": [
+    { "skillId": 9999, "type": "teach", "level": "advanced", "mode": "online" }
+  ]
+}
+
+### Duplicate skill (expect 400)
+PUT {{baseUrl}}/users/me
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Sarah Ben Ali",
+  "skills": [
+    { "skillId": 1, "type": "teach", "level": "advanced", "mode": "online" },
+    { "skillId": 1, "type": "teach", "level": "beginner", "mode": "online" }
+  ]
+}
+
+### Invalid fields (expect 400 with details)
+PUT {{baseUrl}}/users/me
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "S",
+  "year": 99
+}
+
+### No token (expect 401)
+PUT {{baseUrl}}/users/me
+Content-Type: application/json
+
+{
+  "name": "Sarah Ben Ali"
+}
