@@ -14,6 +14,7 @@ tags:
   - name: Auth
   - name: Users
   - name: Skills
+  - name: Matches
 
 paths:
   /auth/register:
@@ -133,6 +134,129 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Skill'
+
+  /users:
+    get:
+      tags: [Users]
+      summary: Search users
+      description: |
+        Lists other users (the signed-in user is never included), 20 per page by default.
+        The filters `skill`, `type`, `category`, `level` and `mode` all apply to the SAME
+        skill entry of a user, and that entry must have the given `type` (default `teach`).
+        Example: `?category=diy&mode=in_person` returns users who teach a DIY skill in person.
+        `university`, `city` and `q` (name) are case-insensitive "contains" searches.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: skill
+          in: query
+          description: Skill id
+          schema: { type: integer }
+        - name: type
+          in: query
+          description: Which side of the skill to match
+          schema: { type: string, enum: [teach, learn], default: teach }
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/SkillCategory'
+        - name: level
+          in: query
+          schema:
+            $ref: '#/components/schemas/SkillLevel'
+        - name: mode
+          in: query
+          schema:
+            $ref: '#/components/schemas/SkillMode'
+        - name: university
+          in: query
+          schema: { type: string }
+        - name: city
+          in: query
+          schema: { type: string }
+        - name: q
+          in: query
+          description: Text search on the user name
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+      responses:
+        '200':
+          description: A page of users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUsers'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Get the public profile of a user
+      description: Same as a profile but without the e-mail address.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: The user's public profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicUser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /matches:
+    get:
+      tags: [Matches]
+      summary: Suggested matches for the signed-in user
+      description: |
+        Users whose skills complement mine, best score first. Only users with at least
+        one overlap are returned.
+
+        Score (0 to 100) = average of two percentages:
+        - how much of what I want to learn they can teach me
+          (skills they teach that I want to learn / skills I want to learn)
+        - how much of what I teach they want to learn
+          (skills I teach that they want to learn / skills I teach)
+        A side counts as 0 if its denominator is 0. A one-sided overlap therefore scores
+        at most 50, which rewards real exchanges.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+      responses:
+        '200':
+          description: Matches, sorted by descending score
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Match'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
 
 components:
   securitySchemes:
@@ -301,7 +425,69 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UserSkill'
+    PublicUser:
+      type: object
+      required: [id, name, skills]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        university:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSkill'
 
+    PaginatedUsers:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicUser'
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+          description: Total number of users matching the filters
+
+    Match:
+      type: object
+      required: [user, score, theyTeachMe, iTeachThem]
+      properties:
+        user:
+          $ref: '#/components/schemas/PublicUser'
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 92
+        theyTeachMe:
+          type: array
+          description: Skills they teach that I want to learn
+          items:
+            $ref: '#/components/schemas/Skill'
+        iTeachThem:
+          type: array
+          description: Skills I teach that they want to learn
+          items:
+            $ref: '#/components/schemas/Skill'
+    
     Error:
       type: object
       required: [message]
@@ -319,3 +505,6 @@ components:
                 type: string
               message:
                 type: string
+
+
+
