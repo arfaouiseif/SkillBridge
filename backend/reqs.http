@@ -94,3 +94,51 @@ Content-Type: application/json
 {
   "name": "Sarah Ben Ali"
 }
+
+
+### All users (expect 200, total around 19-20, 20 items max)
+GET {{baseUrl}}/users
+Authorization: Bearer {{login.response.body.token}}
+
+### Teachers of a DIY skill (expect 2: Amine and Fedi)
+GET {{baseUrl}}/users?category=diy
+Authorization: Bearer {{login.response.body.token}}
+
+### Teachers of a tech skill (expect 5)
+GET {{baseUrl}}/users?category=tech
+Authorization: Bearer {{login.response.body.token}}
+
+### Advanced in-person teachers (expect 4)
+GET {{baseUrl}}/users?mode=in_person&level=advanced
+Authorization: Bearer {{login.response.body.token}}
+
+### By city, case-insensitive (expect 2: Bizerte)
+GET {{baseUrl}}/users?city=bizerte
+Authorization: Bearer {{login.response.body.token}}
+
+### By name (expect Karim)
+GET {{baseUrl}}/users?q=kar
+Authorization: Bearer {{login.response.body.token}}
+
+### Pagination (expect 5 items, page 2)
+GET {{baseUrl}}/users?page=2&pageSize=5
+Authorization: Bearer {{login.response.body.token}}
+
+### Invalid page size (expect 400)
+GET {{baseUrl}}/users?pageSize=500
+Authorization: Bearer {{login.response.body.token}}
+
+### Search without a token (expect 401)
+GET {{baseUrl}}/users
+
+### A public profile (expect 200, and NO email field)
+GET {{baseUrl}}/users/2
+Authorization: Bearer {{login.response.body.token}}
+
+### Unknown user (expect 404)
+GET {{baseUrl}}/users/9999
+Authorization: Bearer {{login.response.body.token}}
+
+### user 20
+GET {{baseUrl}}/users/200
+Authorization: Bearer {{login.response.body.token}}
