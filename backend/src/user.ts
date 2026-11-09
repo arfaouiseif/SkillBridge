@@ -7,11 +7,11 @@ export const userInclude = {
 
 export type UserWithSkills = Prisma.UserGetPayload<{ include: typeof userInclude }>;
 
-export function toUserResponse(user: UserWithSkills) {
+// what anyone can see about a user (all but no email)
+export function toPublicUserResponse(user: UserWithSkills) {
   return {
     id: user.id,
     name: user.name,
-    email: user.email,
     bio: user.bio,
     university: user.university,
     year: user.year,
@@ -24,4 +24,9 @@ export function toUserResponse(user: UserWithSkills) {
       skill: { id: s.skill.id, name: s.skill.name, category: s.skill.category },
     })),
   };
+}
+
+// what a uset sees : the public part with the e-mail
+export function toUserResponse(user: UserWithSkills){
+  return {...toPublicUserResponse(user), email:user.email};
 }

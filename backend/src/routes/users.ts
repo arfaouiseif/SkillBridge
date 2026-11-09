@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { prisma } from '../prisma';
-import { toUserResponse, userInclude } from '../user';
+import { toPublicUserResponse, toUserResponse , userInclude } from '../user';
 import { requireAuth } from '../middleware/auth';
 import { z } from 'zod'
 import { validationError } from '../validation';
+import {Prisma } from '@prisma/client';
+
 
 const updateProfileSchema = z.object({
   name: z.string().trim().min(2),
@@ -23,6 +25,21 @@ const updateProfileSchema = z.object({
     .optional(),
 
 })
+
+const searchSchema = z.object({
+  skill: z.coerce.number().int().optional(),
+  type: z.enum(['teach', 'learn']).default('teach'),
+  category: z
+    .enum(['tech', 'design', 'languages', 'diy', 'daily_life', 'academic', 'music_arts', 'career'])
+    .optional(),
+  level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
+  mode: z.enum(['online', 'in_person', 'both']).optional(),
+  university: z.string().trim().optional(),
+  city: z.string().trim().optional(),
+  q: z.string().trim().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(50).default(20),
+});
 
 
 
@@ -88,4 +105,58 @@ usersRouter.put('/me', async (req, res) => {
   });
 
   res.json(toUserResponse(user));
+});
+
+usersRouter.get('/', async (req, res) => {
+  const userId = res.locals.userId as number;
+
+  const parsed = searchSchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json(validationError(parsed.error));
+    return;
+  }
+  const { skill, type, category, level, mode, university, city, q, page, pageSize } = parsed.data;
+
+  // One skill entry must satisfy ALL the skill filters at once
+  const skillFilter: Prisma.UserSkillWhereInput = { type };
+  if (skill !== undefined) skillFilter.skillId = skill;
+  if (category) skillFilter.skill = { category };
+  if (level) skillFilter.level = level;
+  if (mode) skillFilter.mode = mode;
+
+  // Never return the signed-in user
+  const where: Prisma.UserWhereInput = { id: { not: userId } };
+  if (skill !== undefined || category || level || mode) {
+    where.skills = { some: skillFilter };
+  }
+  if (university) where.university = { contains: university, mode: 'insensitive' };
+  if (city) where.city = { contains: city, mode: 'insensitive' };
+  if (q) where.name = { contains: q, mode: 'insensitive' };
+
+  const [total, users] = await Promise.all([
+    prisma.user.count({ where }),
+    prisma.user.findMany({
+      where,
+      include: userInclude,
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+  ]);
+
+  res.json({ items: users.map(toPublicUserResponse), page, pageSize, total });
+});
+
+usersRouter.get('/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  const user = Number.isInteger(id)
+    ? await prisma.user.findUnique({ where: { id }, include: userInclude })
+    : null;
+
+  if (!user) {
+    res.status(404).json({ message: 'User not found' });
+    return;
+  }
+
+  res.json(toPublicUserResponse(user));
 });
