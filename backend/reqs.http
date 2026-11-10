@@ -140,5 +140,38 @@ GET {{baseUrl}}/users/9999
 Authorization: Bearer {{login.response.body.token}}
 
 ### user 20
-GET {{baseUrl}}/users/200
+GET {{baseUrl}}/users/190
 Authorization: Bearer {{login.response.body.token}}
+
+
+### My matches as Sarah (expect Karim 50 and Slim 50, each with theyTeachMe and iTeachThem)
+GET {{baseUrl}}/matches
+Authorization: Bearer {{login.response.body.token}}
+
+### Limit (expect 1 item)
+GET {{baseUrl}}/matches?limit=1
+Authorization: Bearer {{login.response.body.token}}
+
+### Invalid limit (expect 400)
+GET {{baseUrl}}/matches?limit=0
+Authorization: Bearer {{login.response.body.token}}
+
+### Without a token (expect 401)
+GET {{baseUrl}}/matches
+
+
+
+### Make Sarah the mirror of Karim (expect 200)
+PUT {{baseUrl}}/users/me
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Sarah Ben Ali",
+  "skills": [
+    { "skillId": 8, "type": "teach", "level": "advanced", "mode": "online" },
+    { "skillId": 30, "type": "teach", "level": "beginner", "mode": "online" },
+    { "skillId": 1, "type": "learn", "level": "beginner", "mode": "online" },
+    { "skillId": 6, "type": "learn", "level": "beginner", "mode": "online" }
+  ]
+}

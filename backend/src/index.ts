@@ -4,7 +4,7 @@ import cors from 'cors';
 import { authRouter } from './routes/auth';
 import { usersRouter } from './routes/users';
 import { skillsRouter } from './routes/skills';
-
+import { matchesRouter } from './routes/matches';
 
 
 const app = express();
@@ -15,6 +15,7 @@ app.use(express.json());
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/skills', skillsRouter);
+app.use('/api/matches', matchesRouter);
 
 app.get('/api/health', (_req,res) =>{
     res.json({status: 'ok'});
