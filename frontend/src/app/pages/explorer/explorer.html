@@ -1,0 +1,6 @@
+<main class="explorer">
+  <span class="eyebrow">Explorer</span>
+  <h1>Bonjour {{ auth.user()?.name }}.</h1>
+  <p>Page en construction : le catalogue arrive à la prochaine étape.</p>
+  <button class="btn btn-secondary" (click)="auth.logout()">Se déconnecter</button>
+</main>

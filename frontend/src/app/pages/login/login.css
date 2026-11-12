@@ -1,0 +1,29 @@
+.login { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+
+.login__brand {
+  background: var(--encre);
+  color: var(--papier);
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.login__logo { font-family: var(--font-title); font-size: 22px; }
+.login__brand h2 { font-size: 36px; line-height: 1.15; max-width: 14ch; margin-bottom: 16px; }
+.login__brand p { opacity: .8; margin: 0; }
+.login__brand small { opacity: .6; }
+
+.login__form { display: flex; align-items: center; padding: 48px; }
+.login__form form { width: 100%; max-width: 400px; margin: 0 auto; }
+.login__form h1 { font-size: 34px; margin: 8px 0 32px; }
+
+.login__label { display: block; margin-top: 24px; font-size: 13px; color: var(--ardoise); }
+.login__error { color: #b3261e; font-size: 13px; margin: 6px 0 0; }
+.login__submit { width: 100%; margin-top: 32px; }
+.login__submit:disabled { opacity: .6; cursor: default; }
+.login__switch { margin-top: 24px; font-size: 13px; color: var(--ardoise); }
+
+@media (max-width: 800px) {
+  .login { grid-template-columns: 1fr; }
+  .login__brand { display: none; }
+}
