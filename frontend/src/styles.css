@@ -1,1 +1,36 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --encre: #12295a;
+  --corail: #e8583f;
+  --papier: #f8f5ef;
+  --sarcelle: #2f7f79;
+  --ocre: #c9962b;
+  --ardoise: #6b7488;
+  --filet: #e3dfd6;
+  --radius: 4px;
+  --font-title: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--papier);
+  color: var(--encre);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1, h2, h3 { font-family: var(--font-title); font-weight: 600; margin: 0; }
+
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--corail); }
+
+.btn { font: 600 14px var(--font-body); padding: 12px 20px; border-radius: var(--radius); cursor: pointer; border: 1px solid var(--encre); }
+.btn-primary { background: var(--encre); color: var(--papier); }
+.btn-secondary { background: transparent; color: var(--encre); }
+
+.link { color: var(--encre); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--corail); }
+
+.field { border: 0; border-bottom: 1px solid var(--encre); background: transparent; padding: 10px 0; width: 100%; font: inherit; color: var(--encre); }
+.field:focus { outline: none; border-bottom-color: var(--corail); }
