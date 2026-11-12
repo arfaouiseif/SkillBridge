@@ -1,0 +1,22 @@
+.shell { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+
+.shell__brand {
+  background: var(--encre);
+  color: var(--papier);
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.shell__logo { font-family: var(--font-title); font-size: 22px; }
+.shell__brand h2 { font-size: 36px; line-height: 1.15; max-width: 14ch; margin-bottom: 16px; }
+.shell__brand p { opacity: .8; margin: 0; }
+.shell__brand small { opacity: .6; }
+
+.shell__content { display: flex; align-items: center; padding: 48px; }
+.shell__panel { width: 100%; max-width: 400px; margin: 0 auto; }
+
+@media (max-width: 800px) {
+  .shell { grid-template-columns: 1fr; }
+  .shell__brand { display: none; }
+}

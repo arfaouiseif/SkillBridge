@@ -1,0 +1,45 @@
+<app-auth-shell>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <span class="eyebrow">Inscription</span>
+    <h1 class="form-title">Crée ton compte.</h1>
+
+    <label class="form-label" for="name">Nom complet</label>
+    <input id="name" class="field" type="text" formControlName="name" autocomplete="name" />
+    @if (form.controls.name.touched && form.controls.name.invalid) {
+      <p class="form-error">Entre ton nom (2 caractères minimum).</p>
+    }
+
+    <label class="form-label" for="email">Email étudiant</label>
+    <input id="email" class="field" type="email" formControlName="email" autocomplete="email" />
+    @if (form.controls.email.touched && form.controls.email.invalid) {
+      <p class="form-error">Entre une adresse email valide.</p>
+    }
+
+    <label class="form-label" for="password">Mot de passe</label>
+    <input id="password" class="field" type="password" formControlName="password" autocomplete="new-password" />
+    @if (form.controls.password.touched && form.controls.password.invalid) {
+      <p class="form-error">8 caractères minimum.</p>
+    }
+
+    <label class="form-label" for="confirm">Confirmer le mot de passe</label>
+    <input id="confirm" class="field" type="password" formControlName="confirm" autocomplete="new-password" />
+    @if (form.controls.confirm.touched && form.hasError('mismatch')) {
+      <p class="form-error">Les mots de passe ne correspondent pas.</p>
+    }
+
+    @if (error()) {
+      <p class="form-error" role="alert">{{ error() }}</p>
+    }
+    @for (d of fieldErrors(); track d.field) {
+      <p class="form-error">{{ d.field }} : {{ d.message }}</p>
+    }
+
+    <button class="btn btn-primary form-submit" type="submit" [disabled]="loading()">
+      {{ loading() ? 'Création…' : 'Créer mon compte' }}
+    </button>
+
+    <p class="form-switch">
+      Déjà un compte ? <a class="link" routerLink="/connexion">Se connecter</a>
+    </p>
+  </form>
+</app-auth-shell>

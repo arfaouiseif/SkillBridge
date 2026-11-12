@@ -34,3 +34,12 @@ h1, h2, h3 { font-family: var(--font-title); font-weight: 600; margin: 0; }
 
 .field { border: 0; border-bottom: 1px solid var(--encre); background: transparent; padding: 10px 0; width: 100%; font: inherit; color: var(--encre); }
 .field:focus { outline: none; border-bottom-color: var(--corail); }
+
+
+/* Shared form styles */
+.form-title { font-size: 34px; margin: 8px 0 32px; }
+.form-label { display: block; margin-top: 24px; font-size: 13px; color: var(--ardoise); }
+.form-error { color: #b3261e; font-size: 13px; margin: 6px 0 0; }
+.form-submit { width: 100%; margin-top: 32px; }
+.form-submit:disabled { opacity: .6; cursor: default; }
+.form-switch { margin-top: 24px; font-size: 13px; color: var(--ardoise); }
