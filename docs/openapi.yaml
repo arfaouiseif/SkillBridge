@@ -15,6 +15,8 @@ tags:
   - name: Users
   - name: Skills
   - name: Matches
+  - name: Availability
+  - name: Sessions
 
 paths:
   /auth/register:
@@ -257,6 +259,190 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /users/me/availability:
+    put:
+      tags: [Availability]
+      summary: Replace my weekly availability
+      description: |
+        Replaces the whole list of weekly windows (an empty list clears it).
+        Version 1: all times are in Tunisia time (UTC+1, no daylight saving).
+        Windows on the same weekday must not overlap, and each window must end after it starts.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvailabilityRequest'
+      responses:
+        '200':
+          description: The saved windows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityRequest'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/{id}/availability:
+    get:
+      tags: [Availability]
+      summary: Get a teacher's weekly windows and busy slots
+      description: |
+        `windows` is the weekly availability. `busy` lists the accepted sessions of that
+        user in the next 60 days, so the calendar can grey them out.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Availability of the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherAvailability'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sessions:
+    post:
+      tags: [Sessions]
+      summary: Request a session with a teacher
+      description: |
+        Creates a session with status `pending`. The request is rejected with 400 if the
+        slot is in the past, does not start on a half hour, does not fit entirely inside one
+        of the teacher's weekly windows, if the skill is not one the teacher teaches, or if
+        the teacher is the signed-in user. It is rejected with 409 if the teacher or the
+        learner already has an `accepted` session overlapping the slot.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+      responses:
+        '201':
+          description: Session requested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Teacher not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Slot no longer available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags: [Sessions]
+      summary: List my sessions (as teacher or learner)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/SessionStatus'
+        - name: role
+          in: query
+          description: Only sessions where I am the teacher or the learner
+          schema: { type: string, enum: [teacher, learner] }
+        - name: when
+          in: query
+          description: Upcoming (not ended yet, soonest first) or past (most recent first)
+          schema: { type: string, enum: [upcoming, past] }
+      responses:
+        '200':
+          description: My sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /sessions/{id}/status:
+    patch:
+      tags: [Sessions]
+      summary: Change the status of a session
+      description: |
+        Allowed changes:
+        - `accepted` or `declined`: teacher only, session must be `pending`.
+          Accepting re-checks conflicts and fails with 409 if another accepted session overlaps.
+        - `cancelled`: teacher or learner, session must be `pending` or `accepted` and not started yet.
+        - `completed`: teacher or learner, session must be `accepted` and already ended.
+        Any other change fails with 409.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSessionStatusRequest'
+      responses:
+        '200':
+          description: Updated session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: This user is not allowed to make this change
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Session not found, or the user is not a participant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Invalid status change, or conflict with another accepted session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   securitySchemes:
@@ -487,7 +673,130 @@ components:
           description: Skills I teach that they want to learn
           items:
             $ref: '#/components/schemas/Skill'
-    
+    AvailabilityWindow:
+      type: object
+      required: [weekday, startTime, endTime]
+      properties:
+        weekday:
+          type: integer
+          minimum: 1
+          maximum: 7
+          description: 1 = Monday ... 7 = Sunday
+        startTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          example: '18:00'
+        endTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          example: '20:00'
+
+    AvailabilityRequest:
+      type: object
+      required: [windows]
+      properties:
+        windows:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityWindow'
+
+    TimeRange:
+      type: object
+      required: [startAt, endAt]
+      properties:
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+
+    TeacherAvailability:
+      type: object
+      required: [windows, busy]
+      properties:
+        windows:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityWindow'
+        busy:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeRange'
+
+    SessionStatus:
+      type: string
+      enum: [pending, accepted, declined, completed, cancelled]
+
+    UserSummary:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    Session:
+      type: object
+      required: [id, teacher, learner, skill, startAt, endAt, status, createdAt]
+      properties:
+        id:
+          type: integer
+        teacher:
+          $ref: '#/components/schemas/UserSummary'
+        learner:
+          $ref: '#/components/schemas/UserSummary'
+        skill:
+          $ref: '#/components/schemas/Skill'
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/SessionStatus'
+        message:
+          type: string
+          nullable: true
+          description: Optional note from the learner
+        meetingLink:
+          type: string
+          format: uri
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateSessionRequest:
+      type: object
+      required: [teacherId, skillId, startAt, durationMinutes]
+      properties:
+        teacherId:
+          type: integer
+        skillId:
+          type: integer
+        startAt:
+          type: string
+          format: date-time
+          description: ISO 8601, must start on the hour or half hour (Tunisia time)
+          example: '2026-11-16T18:00:00+01:00'
+        durationMinutes:
+          type: integer
+          enum: [30, 60, 90, 120]
+        message:
+          type: string
+          maxLength: 300
+          nullable: true
+
+    UpdateSessionStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [accepted, declined, cancelled, completed]
     Error:
       type: object
       required: [message]
