@@ -11,4 +11,10 @@ import { Auth } from '../../core/auth';
 export class Navbar {
   protected auth = inject(Auth);
   protected readonly firstName = computed(() => this.auth.user()?.name.split(' ')[0] ?? '');
+
+  constructor() {
+    if (this.auth.isLoggedIn() && !this.auth.user()) {
+      this.auth.loadMe().subscribe();
+    }
+  }
 }

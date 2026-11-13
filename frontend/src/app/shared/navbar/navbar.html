@@ -1,10 +1,21 @@
 <header class="navbar">
   <nav class="navbar__links">
-    <span class="navbar__logo">SkillBridge</span>
+    <a routerLink="/" class="navbar__brand" aria-label="SkillBridge, accueil">
+      <img src="logo.png" alt="SkillBridge" height="40" />
+    </a>
     <a routerLink="/explorer" routerLinkActive="is-active">Explorer</a>
+    <a routerLink="/" fragment="comment-ca-marche">Comment ça marche</a>
   </nav>
-  <div class="navbar__user">
-    <span class="navbar__name">{{ firstName() }}</span>
-    <button class="navbar__logout" type="button" (click)="auth.logout()">Déconnexion</button>
-  </div>
+
+  @if (auth.isLoggedIn()) {
+    <div class="navbar__user">
+      <span class="navbar__name">{{ firstName() }}</span>
+      <button class="navbar__logout" type="button" (click)="auth.logout()">Déconnexion</button>
+    </div>
+  } @else {
+    <div class="navbar__user">
+      <a routerLink="/connexion" class="navbar__login">Connexion</a>
+      <a routerLink="/inscription" class="btn btn-primary navbar__signup">S'inscrire</a>
+    </div>
+  }
 </header>
