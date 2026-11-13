@@ -4,6 +4,7 @@ import { PaginatedUsers, SkillCategory } from './models/api.models';
 
 export interface UserSearch {
   q?: string;
+  skill?: number;
   category?: SkillCategory;
   page?: number;
   pageSize?: number;

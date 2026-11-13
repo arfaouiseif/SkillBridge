@@ -1,6 +1,5 @@
 .explorer { max-width: 1040px; margin: 0 auto; padding: 48px 24px; }
 .explorer__title { font-size: 34px; margin: 8px 0 28px; }
-.explorer__search { max-width: 480px; }
 
 .explorer__tabs { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 24px 0 8px; }
 .explorer__tab {
@@ -37,3 +36,49 @@
   .explorer__row { grid-template-columns: 1fr auto; }
   .explorer__teaches, .explorer__learns { grid-column: 1; text-align: left; }
 }
+
+
+.explorer__searchbox { position: relative; max-width: 480px; }
+.explorer__suggest {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--papier);
+  border: 1px solid var(--encre);
+  border-top: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+.explorer__suggest button {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--filet);
+  font: inherit;
+  color: var(--encre);
+  text-align: left;
+  cursor: pointer;
+}
+.explorer__suggest li:last-child button { border-bottom: 0; color: var(--ardoise); }
+.explorer__suggest button:hover { background: var(--filet); }
+.explorer__suggest small { color: var(--ardoise); font-size: 12px; }
+
+.explorer__chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.explorer__chip {
+  background: none;
+  border: 1px solid var(--encre);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  font: 500 13px var(--font-body);
+  color: var(--encre);
+  cursor: pointer;
+}
+.explorer__chip span { margin-left: 6px; color: var(--corail); }

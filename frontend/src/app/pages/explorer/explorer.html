@@ -2,13 +2,53 @@
   <span class="eyebrow">Explorer</span>
   <h1 class="explorer__title">Quelle compétence cherches-tu ?</h1>
 
-  <input
-    class="field explorer__search"
-    type="search"
-    placeholder="Rechercher un membre par nom…"
-    [value]="query()"
-    (input)="onSearch($any($event.target).value)"
-  />
+  <div class="explorer__searchbox">
+    <input
+      class="field"
+      type="search"
+      placeholder="Figma, guitare, plomberie… ou un nom"
+      autocomplete="off"
+      [value]="draft()"
+      (input)="onType($any($event.target).value)"
+      (focus)="suggestionsOpen.set(true)"
+      (blur)="suggestionsOpen.set(false)"
+      (keydown.enter)="applyName()"
+      (keydown.escape)="suggestionsOpen.set(false)"
+    />
+
+    @if (suggestionsOpen() && draft().trim().length >= 2) {
+      <ul class="explorer__suggest" role="listbox">
+        @for (s of suggestions(); track s.id) {
+          <li>
+            <button type="button" role="option" (mousedown)="$event.preventDefault(); pickSkill(s)">
+              {{ s.name }}
+              <small>{{ categoryLabels[s.category] }}</small>
+            </button>
+          </li>
+        }
+        <li>
+          <button type="button" role="option" (mousedown)="$event.preventDefault(); applyName()">
+            Chercher le membre « {{ draft().trim() }} »
+          </button>
+        </li>
+      </ul>
+    }
+  </div>
+
+  @if (selectedSkill() || nameFilter()) {
+    <div class="explorer__chips">
+      @if (selectedSkill(); as skill) {
+        <button type="button" class="explorer__chip" (click)="clearSkill()">
+          Compétence : {{ skill.name }} <span aria-hidden="true">×</span>
+        </button>
+      }
+      @if (nameFilter()) {
+        <button type="button" class="explorer__chip" (click)="clearName()">
+          Nom : {{ nameFilter() }} <span aria-hidden="true">×</span>
+        </button>
+      }
+    </div>
+  }
 
   <div class="explorer__tabs" role="tablist">
     @for (tab of tabs; track tab.label) {
@@ -16,8 +56,8 @@
         type="button"
         role="tab"
         class="explorer__tab"
-        [class.is-active]="category() === tab.value"
-        [attr.aria-selected]="category() === tab.value"
+        [class.is-active]="!selectedSkill() && category() === tab.value"
+        [attr.aria-selected]="!selectedSkill() && category() === tab.value"
         (click)="selectCategory(tab.value)"
       >
         {{ tab.label }}
