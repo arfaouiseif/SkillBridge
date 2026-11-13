@@ -4,6 +4,11 @@ import { MainLayout } from './layout/main-layout/main-layout';
 
 export const routes: Routes = [
   {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () => import('./pages/home/home').then((m) => m.Home),
+  },
+  {
     path: 'connexion',
     loadComponent: () => import('./pages/login/login').then((m) => m.Login),
   },
@@ -16,7 +21,6 @@ export const routes: Routes = [
     component: MainLayout,
     canActivate: [authGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'explorer' },
       {
         path: 'explorer',
         loadComponent: () => import('./pages/explorer/explorer').then((m) => m.Explorer),
