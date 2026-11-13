@@ -1,0 +1,46 @@
+<app-navbar />
+
+<main class="home">
+  <section class="home__hero">
+    <div class="home__intro">
+      <span class="eyebrow">Échange de compétences entre étudiants</span>
+      <h1 class="home__title">Ce que tu sais a de la valeur pour quelqu'un d'autre.</h1>
+      <p class="home__lead">
+        Enseigne une compétence, apprends-en une autre. Code, design, langues, bricolage.
+        Sans argent, entre étudiants.
+      </p>
+
+      <div class="home__actions">
+        @if (auth.isLoggedIn()) {
+          <a class="btn btn-primary home__cta" routerLink="/explorer">Explorer les membres</a>
+        } @else {
+          <a class="btn btn-primary home__cta" routerLink="/inscription">Créer mon profil</a>
+          <a class="link" routerLink="/explorer">Parcourir les compétences</a>
+        }
+      </div>
+    </div>
+
+    <aside class="home__week" aria-label="Exemples d'échanges">
+      <span class="eyebrow">Cette semaine</span>
+      <ul>
+        @for (e of examples; track e.name) {
+          <li>
+            <span class="home__week-name">{{ e.name }}</span>
+            <span>enseigne {{ e.teaches }}</span>
+            <span class="home__week-learns">cherche {{ e.learns }}</span>
+          </li>
+        }
+      </ul>
+    </aside>
+  </section>
+
+  <section id="comment-ca-marche" class="home__steps">
+    @for (s of steps; track s.number) {
+      <article>
+        <span class="home__step-number">{{ s.number }}</span>
+        <h3>{{ s.title }}</h3>
+        <p>{{ s.text }}</p>
+      </article>
+    }
+  </section>
+</main>

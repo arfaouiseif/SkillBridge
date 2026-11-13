@@ -1,0 +1,44 @@
+.home { max-width: 1040px; margin: 0 auto; padding: 0 24px 64px; }
+
+.home__hero {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 64px;
+  align-items: start;
+  padding: 64px 0 56px;
+}
+.home__title { font-size: 52px; line-height: 1.08; margin: 16px 0 24px; }
+.home__lead { font-size: 16px; max-width: 46ch; margin: 0 0 32px; }
+.home__actions { display: flex; align-items: center; gap: 28px; }
+.home__cta { text-decoration: none; }
+
+.home__week { padding-top: 6px; }
+.home__week ul { list-style: none; margin: 16px 0 0; padding: 0; }
+.home__week li {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--filet);
+  font-size: 14px;
+}
+.home__week-name { font-family: var(--font-title); font-weight: 600; font-size: 16px; }
+.home__week-learns { color: var(--ardoise); text-align: right; }
+
+.home__steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  padding-top: 40px;
+  border-top: 1px solid var(--filet);
+  scroll-margin-top: 24px;
+}
+.home__step-number { font-family: var(--font-title); font-weight: 600; font-size: 28px; color: var(--corail); }
+.home__steps h3 { font-family: var(--font-body); font-size: 15px; font-weight: 600; margin: 8px 0 4px; }
+.home__steps p { margin: 0; font-size: 13px; color: var(--ardoise); }
+
+@media (max-width: 800px) {
+  .home__hero { grid-template-columns: 1fr; gap: 40px; padding-top: 40px; }
+  .home__title { font-size: 38px; }
+  .home__steps { grid-template-columns: 1fr; }
+}
