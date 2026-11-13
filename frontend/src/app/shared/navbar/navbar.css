@@ -1,0 +1,17 @@
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--filet);
+}
+.navbar__links { display: flex; align-items: center; gap: 28px; }
+.navbar__logo { font-family: var(--font-title); font-size: 20px; margin-right: 12px; }
+.navbar__links a { color: var(--encre); text-decoration: none; font-size: 14px; padding-bottom: 4px; border-bottom: 2px solid transparent; }
+.navbar__links a.is-active { border-bottom-color: var(--corail); }
+.navbar__user { display: flex; align-items: center; gap: 20px; }
+.navbar__name { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+.navbar__logout { background: none; border: 0; color: var(--ardoise); font: inherit; font-size: 13px; cursor: pointer; }
+.navbar__logout:hover { color: var(--encre); }

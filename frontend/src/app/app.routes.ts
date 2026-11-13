@@ -1,20 +1,27 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth-guard';
+import { MainLayout } from './layout/main-layout/main-layout';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'explorer' },
   {
     path: 'connexion',
     loadComponent: () => import('./pages/login/login').then((m) => m.Login),
   },
-    {
+  {
     path: 'inscription',
     loadComponent: () => import('./pages/register/register').then((m) => m.Register),
   },
   {
-    path: 'explorer',
+    path: '',
+    component: MainLayout,
     canActivate: [authGuard],
-    loadComponent: () => import('./pages/explorer/explorer').then((m) => m.Explorer),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'explorer' },
+      {
+        path: 'explorer',
+        loadComponent: () => import('./pages/explorer/explorer').then((m) => m.Explorer),
+      },
+    ],
   },
-  { path: '**', redirectTo: 'explorer' },
+  { path: '**', redirectTo: '' },
 ];

@@ -1,6 +1,56 @@
 <main class="explorer">
   <span class="eyebrow">Explorer</span>
-  <h1>Bonjour {{ auth.user()?.name }}.</h1>
-  <p>Page en construction : le catalogue arrive à la prochaine étape.</p>
-  <button class="btn btn-secondary" (click)="auth.logout()">Se déconnecter</button>
+  <h1 class="explorer__title">Quelle compétence cherches-tu ?</h1>
+
+  <input
+    class="field explorer__search"
+    type="search"
+    placeholder="Rechercher un membre par nom…"
+    [value]="query()"
+    (input)="onSearch($any($event.target).value)"
+  />
+
+  <div class="explorer__tabs" role="tablist">
+    @for (tab of tabs; track tab.label) {
+      <button
+        type="button"
+        role="tab"
+        class="explorer__tab"
+        [class.is-active]="category() === tab.value"
+        [attr.aria-selected]="category() === tab.value"
+        (click)="selectCategory(tab.value)"
+      >
+        {{ tab.label }}
+      </button>
+    }
+  </div>
+
+  @if (error()) {
+    <p class="form-error" role="alert">{{ error() }}</p>
+  } @else if (loading() && !result()) {
+    <p class="explorer__state">Chargement…</p>
+  } @else if (rows().length === 0) {
+    <p class="explorer__state">Aucun membre ne correspond à ta recherche.</p>
+  } @else {
+    <ul class="explorer__list" [class.is-loading]="loading()">
+      @for (row of rows(); track row.id) {
+        <li class="explorer__row">
+          <span class="explorer__name">{{ row.name }}</span>
+          <span class="explorer__teaches">{{ row.teaches }}</span>
+          <span class="explorer__learns">{{ row.learns ? 'cherche ' + row.learns : '' }}</span>
+          <a class="link explorer__see" [routerLink]="['/membres', row.id]">Voir</a>
+        </li>
+      }
+    </ul>
+
+    <nav class="explorer__pager" aria-label="Pagination">
+      <button class="btn btn-secondary" type="button" [disabled]="page() <= 1" (click)="goTo(page() - 1)">
+        Précédent
+      </button>
+      <span>Page {{ page() }} / {{ totalPages() }}</span>
+      <button class="btn btn-secondary" type="button" [disabled]="page() >= totalPages()" (click)="goTo(page() + 1)">
+        Suivant
+      </button>
+    </nav>
+  }
 </main>

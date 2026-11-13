@@ -1,0 +1,10 @@
+<header class="navbar">
+  <nav class="navbar__links">
+    <span class="navbar__logo">SkillBridge</span>
+    <a routerLink="/explorer" routerLinkActive="is-active">Explorer</a>
+  </nav>
+  <div class="navbar__user">
+    <span class="navbar__name">{{ firstName() }}</span>
+    <button class="navbar__logout" type="button" (click)="auth.logout()">Déconnexion</button>
+  </div>
+</header>
