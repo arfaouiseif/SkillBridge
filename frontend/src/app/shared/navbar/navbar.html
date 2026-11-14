@@ -4,6 +4,9 @@
       <img src="logo.png" alt="SkillBridge" height="40" />
     </a>
     <a routerLink="/explorer" routerLinkActive="is-active">Explorer</a>
+        @if (auth.isLoggedIn()) {
+      <a routerLink="/mon-profil" routerLinkActive="is-active">Mon profil</a>
+    }
     <a routerLink="/" fragment="comment-ca-marche">Comment ça marche</a>
   </nav>
 

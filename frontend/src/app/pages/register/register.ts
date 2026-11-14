@@ -48,7 +48,7 @@ export class Register {
     const { name, email, password } = this.form.getRawValue();
 
     this.auth.register({ name, email, password }).subscribe({
-      next: () => this.router.navigate(['/explorer']),
+      next: () => this.router.navigate(['/mon-profil']),
       error: (err: HttpErrorResponse) => {
         const body = err.error as ApiError | null;
         this.fieldErrors.set(body?.details ?? []);
