@@ -1,0 +1,101 @@
+<main class="profile">
+  <section class="profile__main">
+    <span class="eyebrow">Mon profil</span>
+    <h1 class="profile__title">Ce que tu sais, ce que tu cherches.</h1>
+
+    @if (loading()) {
+      <p class="profile__state">Chargement…</p>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <label class="form-label" for="name">Nom complet</label>
+        <input id="name" class="field" type="text" formControlName="name" />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <p class="form-error">Entre ton nom (2 caractères minimum).</p>
+        }
+
+        <label class="form-label" for="bio">Présentation</label>
+        <textarea id="bio" class="field profile__bio" rows="3" formControlName="bio"
+          placeholder="Quelques mots sur toi (500 caractères maximum)"></textarea>
+        @if (form.controls.bio.invalid) {
+          <p class="form-error">500 caractères maximum.</p>
+        }
+
+        <div class="profile__grid">
+          <div>
+            <label class="form-label" for="university">Université</label>
+            <input id="university" class="field" type="text" formControlName="university" />
+          </div>
+          <div>
+            <label class="form-label" for="year">Année</label>
+            <input id="year" class="field" type="number" min="1" max="8" formControlName="year" />
+          </div>
+          <div>
+            <label class="form-label" for="city">Ville</label>
+            <input id="city" class="field" type="text" formControlName="city" />
+          </div>
+        </div>
+
+        <app-skill-editor
+          type="teach"
+          title="J'enseigne"
+          hint="Les compétences que tu peux transmettre, avec ton niveau."
+          [(skills)]="teach"
+        />
+
+        <app-skill-editor
+          type="learn"
+          title="Je cherche"
+          hint="Ce que tu veux apprendre, avec le niveau visé."
+          [(skills)]="learn"
+        />
+
+        @if (error()) {
+          <p class="form-error" role="alert">{{ error() }}</p>
+        }
+
+        <div class="profile__actions">
+          <button class="btn btn-primary" type="submit" [disabled]="saving()">
+            {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+          </button>
+          @if (saved()) {
+            <span class="profile__saved" role="status">Profil enregistré.</span>
+          }
+        </div>
+      </form>
+    }
+  </section>
+
+  <aside class="profile__matches" aria-label="Tes correspondances">
+    <span class="eyebrow">Correspondances</span>
+    <h2 class="profile__matches-title">Pour toi</h2>
+
+    @if (matchesError()) {
+      <p class="form-error" role="alert">{{ matchesError() }}</p>
+    } @else if (matchesLoading() && matches().length === 0) {
+      <p class="profile__state">Chargement…</p>
+    } @else if (matches().length === 0) {
+      <p class="profile__state">
+        Ajoute au moins une compétence que tu enseignes et une que tu cherches, puis enregistre :
+        tes correspondances apparaîtront ici.
+      </p>
+    } @else {
+      <ul class="matches" [class.is-loading]="matchesLoading()">
+        @for (m of matches(); track m.user.id) {
+          <li class="match">
+            <div class="match__head">
+              <span class="match__name">{{ m.user.name }}</span>
+              <span class="match__score">{{ m.score }} %</span>
+            </div>
+            <div class="match__bar"><span [style.width.%]="m.score"></span></div>
+            @if (m.theyTeachMe.length) {
+              <p><span class="match__label">Peut t'apprendre</span> {{ names(m.theyTeachMe) }}</p>
+            }
+            @if (m.iTeachThem.length) {
+              <p><span class="match__label">Veut apprendre de toi</span> {{ names(m.iTeachThem) }}</p>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </aside>
+</main>

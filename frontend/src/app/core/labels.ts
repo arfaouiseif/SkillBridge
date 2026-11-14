@@ -1,4 +1,4 @@
-import { SkillCategory, SkillLevel } from './models/api.models';
+import { SkillCategory, SkillLevel, SkillMode } from './models/api.models';
 
 export const LEVEL_LABELS: Record<SkillLevel, string> = {
   beginner: 'débutant',
@@ -15,4 +15,10 @@ export const CATEGORY_LABELS: Record<SkillCategory, string> = {
   daily_life: 'Quotidien',
   academic: 'Études',
   career: 'Carrière',
+};
+
+export const MODE_LABELS: Record<SkillMode, string> = {
+  online: 'en ligne',
+  in_person: 'sur place',
+  both: 'en ligne ou sur place',
 };
