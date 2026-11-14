@@ -58,3 +58,20 @@ export interface CreateSessionRequest {
 }
 
 export interface ApiError { message: string; details?: { field: string; message: string }[]; }
+
+
+export interface UpdateProfileRequest {
+  name: string;
+  bio?: string | null;
+  university?: string | null;
+  year?: number | null;
+  city?: string | null;
+  skills: { skillId: number; type: 'teach' | 'learn'; level: SkillLevel; mode: SkillMode }[];
+}
+
+export interface Match {
+  user: PublicUser;
+  score: number;
+  theyTeachMe: Skill[];
+  iTeachThem: Skill[];
+}

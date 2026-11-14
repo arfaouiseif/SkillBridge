@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Service, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs';
-import { AuthResponse, LoginRequest, RegisterRequest, User } from './models/api.models';
+import { AuthResponse, LoginRequest, RegisterRequest, User, UpdateProfileRequest } from './models/api.models';
 
 const TOKEN_KEY = 'sb_token';
 
@@ -29,6 +29,10 @@ export class Auth {
 
   loadMe() {
     return this.http.get<User>('/api/users/me').pipe(tap((u) => this.user.set(u)));
+  }
+  
+  updateProfile(body: UpdateProfileRequest) {
+    return this.http.put<User>('/api/users/me', body).pipe(tap((u) => this.user.set(u)));
   }
 
   logout() {
