@@ -1,0 +1,75 @@
+<section class="editor">
+  <h2 class="editor__title">{{ title() }}</h2>
+  @if (hint()) {
+    <p class="editor__hint">{{ hint() }}</p>
+  }
+
+  <div class="editor__search">
+    <input
+      class="field"
+      type="search"
+      autocomplete="off"
+      placeholder="Chercher une compétence…"
+      [attr.aria-label]="title()"
+      [value]="draft()"
+      (input)="draft.set($any($event.target).value); open.set(true)"
+      (focus)="open.set(true)"
+      (blur)="open.set(false)"
+      (keydown.escape)="open.set(false)"
+    />
+
+    @if (open() && draft().trim().length >= 2) {
+      <ul class="editor__suggest" role="listbox">
+        @for (s of suggestions(); track s.id) {
+          <li>
+            <button type="button" role="option" (mousedown)="$event.preventDefault(); add(s)">
+              {{ s.name }}
+              <small>{{ categoryLabels[s.category] }}</small>
+            </button>
+          </li>
+        } @empty {
+          <li class="editor__none">{{ searching() ? 'Recherche…' : 'Aucune compétence trouvée.' }}</li>
+        }
+      </ul>
+    }
+  </div>
+
+  <ul class="editor__list">
+    @for (s of skills(); track s.skillId) {
+      <li class="editor__row">
+        <span class="editor__name">{{ s.skill?.name ?? 'Compétence #' + s.skillId }}</span>
+
+        <select
+          class="editor__select"
+          [attr.aria-label]="'Niveau pour ' + (s.skill?.name ?? s.skillId)"
+          (change)="setLevel(s.skillId, $any($event.target).value)"
+        >
+          @for (l of levels; track l) {
+            <option [value]="l" [selected]="l === s.level">{{ levelLabels[l] }}</option>
+          }
+        </select>
+
+        <select
+          class="editor__select"
+          [attr.aria-label]="'Mode pour ' + (s.skill?.name ?? s.skillId)"
+          (change)="setMode(s.skillId, $any($event.target).value)"
+        >
+          @for (m of modes; track m) {
+            <option [value]="m" [selected]="m === s.mode">{{ modeLabels[m] }}</option>
+          }
+        </select>
+
+        <button
+          type="button"
+          class="editor__remove"
+          [attr.aria-label]="'Retirer ' + (s.skill?.name ?? s.skillId)"
+          (click)="remove(s.skillId)"
+        >
+          ×
+        </button>
+      </li>
+    } @empty {
+      <li class="editor__empty">Aucune compétence pour l'instant.</li>
+    }
+  </ul>
+</section>
