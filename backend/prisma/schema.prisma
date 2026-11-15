@@ -35,6 +35,14 @@ enum SkillType {
   learn
 }
 
+enum SessionStatus {
+  pending
+  accepted
+  declined
+  completed
+  cancelled
+}
+
 model User {
   id           Int         @id @default(autoincrement())
   name         String
@@ -46,6 +54,9 @@ model User {
   city         String?
   createdAt    DateTime    @default(now()) @map("created_at")
   skills       UserSkill[]
+  availabilities Availability[]
+  teachingSessions Session[] @relation("TeacherSessions")
+  learningSessions Session[] @relation("LearnerSessions")
 
   @@map("users")
 }
@@ -55,6 +66,7 @@ model Skill {
   name     String        @unique
   category SkillCategory
   users    UserSkill[]
+  sessions Session[]
 
   @@map("skills")
 }
@@ -70,4 +82,38 @@ model UserSkill {
 
   @@id([userId, skillId, type])
   @@map("user_skills")
+}
+
+model Availability {
+  id          Int  @id @default(autoincrement())
+  teacherId   Int  @map("teacher_id")
+  weekday     Int  // 1 = Monday ... 7 = Sunday
+  startMinute Int  @map("start_minute") // minutes since midnight, Tunisia time
+  endMinute   Int  @map("end_minute")
+  teacher     User @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([teacherId])
+  @@map("availabilities")
+}
+
+model Session {
+  id          Int           @id @default(autoincrement())
+  teacherId   Int           @map("teacher_id")
+  learnerId   Int           @map("learner_id")
+  skillId     Int           @map("skill_id")
+  startAt     DateTime      @map("start_at")
+  endAt       DateTime      @map("end_at")
+  status      SessionStatus @default(pending)
+  message     String?
+  meetingLink String?       @map("meeting_link")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  teacher User  @relation("TeacherSessions", fields: [teacherId], references: [id], onDelete: Cascade)
+  learner User  @relation("LearnerSessions", fields: [learnerId], references: [id], onDelete: Cascade)
+  skill   Skill @relation(fields: [skillId], references: [id])
+
+  @@index([teacherId, startAt])
+  @@index([learnerId, startAt])
+  @@map("sessions")
 }
