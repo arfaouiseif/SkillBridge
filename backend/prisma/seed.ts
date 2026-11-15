@@ -82,7 +82,7 @@ async function main() {
   // 2. Users and their skills (the same password for all, handy for testing)
   const passwordHash = await bcrypt.hash('Password123!', 10);
 
-  for (const u of users) {
+  for (const [index, u] of users.entries()) {
     const email = emailFor(u.name);
     const user = await prisma.user.upsert({
       where: { email },
@@ -97,6 +97,15 @@ async function main() {
       const skill = skillByName.get(name);
       if (!skill) throw new Error(`Unknown skill in seed: ${name}`);
       return { userId: user.id, skillId: skill.id, type, level, mode: modeFor(skill.category) };
+    });
+        // Two weekly windows per user, on different weekdays
+    const windows = [
+      { weekday: (index % 5) + 1, startMinute: 18 * 60, endMinute: 20 * 60 },
+      { weekday: ((index + 2) % 5) + 1, startMinute: 17 * 60, endMinute: 19 * 60 },
+    ];
+    await prisma.availability.deleteMany({ where: { teacherId: user.id } });
+    await prisma.availability.createMany({
+      data: windows.map((w) => ({ ...w, teacherId: user.id })),
     });
 
     await prisma.userSkill.deleteMany({ where: { userId: user.id } });

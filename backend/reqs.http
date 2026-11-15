@@ -175,3 +175,62 @@ Content-Type: application/json
     { "skillId": 6, "type": "learn", "level": "beginner", "mode": "online" }
   ]
 }
+
+
+
+
+### Set my availability (expect 200, sorted by weekday)
+PUT {{baseUrl}}/users/me/availability
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "windows": [
+    { "weekday": 3, "startTime": "17:00", "endTime": "19:00" },
+    { "weekday": 1, "startTime": "18:00", "endTime": "20:00" }
+  ]
+}
+
+### Clear my availability (expect 200 with an empty list)
+PUT {{baseUrl}}/users/me/availability
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "windows": [] }
+
+### End before start (expect 400)
+PUT {{baseUrl}}/users/me/availability
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "windows": [ { "weekday": 1, "startTime": "20:00", "endTime": "18:00" } ] }
+
+### Overlap on the same day (expect 400)
+PUT {{baseUrl}}/users/me/availability
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "windows": [
+    { "weekday": 1, "startTime": "18:00", "endTime": "20:00" },
+    { "weekday": 1, "startTime": "19:00", "endTime": "21:00" }
+  ]
+}
+
+### Invalid time and weekday (expect 400 with details)
+PUT {{baseUrl}}/users/me/availability
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "windows": [ { "weekday": 8, "startTime": "25:00", "endTime": "26:00" } ] }
+
+### Karim's availability (expect Tuesday 18:00-20:00 and Thursday 17:00-19:00, busy empty)
+GET {{baseUrl}}/users/2/availability
+Authorization: Bearer {{login.response.body.token}}
+
+### Unknown user (expect 404)
+GET {{baseUrl}}/users/9999/availability
+Authorization: Bearer {{login.response.body.token}}
+
+### Without a token (expect 401)
+GET {{baseUrl}}/users/2/availability
