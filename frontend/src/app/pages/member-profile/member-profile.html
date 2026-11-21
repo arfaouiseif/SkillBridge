@@ -1,0 +1,60 @@
+<main class="member">
+  @switch (state()) {
+    @case ('loading') {
+      <p class="member__state">Chargement…</p>
+    }
+    @case ('notfound') {
+      <span class="eyebrow">Profil</span>
+      <h1 class="member__name">Ce membre n'existe pas.</h1>
+      <p class="member__state"><a class="link" routerLink="/explorer">Retour à l'exploration</a></p>
+    }
+    @case ('error') {
+      <p class="form-error" role="alert">Impossible de charger ce profil.</p>
+      <p class="member__state"><a class="link" routerLink="/explorer">Retour à l'exploration</a></p>
+    }
+    @case ('ready') {
+      @if (member(); as m) {
+        <a class="member__back" routerLink="/explorer">← Explorer</a>
+
+        <span class="eyebrow">Profil</span>
+        <h1 class="member__name">{{ m.name }}</h1>
+        @if (meta()) {
+          <p class="member__meta">{{ meta() }}</p>
+        }
+        @if (m.bio) {
+          <p class="member__bio">{{ m.bio }}</p>
+        }
+
+        <div class="member__skills">
+          <section>
+            <span class="eyebrow">Enseigne</span>
+            <ul>
+              @for (s of teach(); track s.skillId) {
+                <li>
+                  <span class="member__skill-name">{{ s.skill?.name }}</span>
+                  <span class="member__skill-meta">{{ levelLabels[s.level] }} · {{ modeLabels[s.mode] }}</span>
+                </li>
+              } @empty {
+                <li class="member__none">Rien pour l'instant.</li>
+              }
+            </ul>
+          </section>
+
+          <section>
+            <span class="eyebrow">Cherche</span>
+            <ul>
+              @for (s of learn(); track s.skillId) {
+                <li>
+                  <span class="member__skill-name">{{ s.skill?.name }}</span>
+                  <span class="member__skill-meta">{{ levelLabels[s.level] }} · {{ modeLabels[s.mode] }}</span>
+                </li>
+              } @empty {
+                <li class="member__none">Rien pour l'instant.</li>
+              }
+            </ul>
+          </section>
+        </div>
+      }
+    }
+  }
+</main>

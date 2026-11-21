@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
-import { PaginatedUsers, SkillCategory } from './models/api.models';
+import { PaginatedUsers, PublicUser, SkillCategory } from './models/api.models';
 
 export interface UserSearch {
   q?: string;
@@ -13,6 +13,10 @@ export interface UserSearch {
 @Service()
 export class Users {
   private http = inject(HttpClient);
+  
+  get(id: number) {
+  return this.http.get<PublicUser>(`/api/users/${id}`);
+  }
 
   search(filters: UserSearch) {
     let params = new HttpParams();

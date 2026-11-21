@@ -5,9 +5,10 @@ import { Auth } from '../../core/auth';
 import { Matches } from '../../core/matches';
 import { ApiError, Match, Skill, UpdateProfileRequest, User, UserSkill } from '../../core/models/api.models';
 import { SkillEditor } from '../../shared/skill-editor/skill-editor';
+import { RouterLink } from '@angular/router';
 
 @Component({
-  imports: [ReactiveFormsModule, SkillEditor],
+  imports: [ReactiveFormsModule, RouterLink , SkillEditor],
   selector: 'app-my-profile',
   styleUrl: './my-profile.css',
   templateUrl: './my-profile.html',

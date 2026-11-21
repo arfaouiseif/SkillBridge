@@ -23,7 +23,8 @@
 .match { padding: 16px 0; border-bottom: 1px solid var(--filet); font-size: 13px; }
 .match p { margin: 6px 0 0; }
 .match__head { display: flex; justify-content: space-between; align-items: baseline; }
-.match__name { font-family: var(--font-title); font-weight: 600; font-size: 18px; }
+.match__name { font-family: var(--font-title); font-weight: 600; font-size: 18px; color: var(--encre); text-decoration: none; }
+.match__name:hover { border-bottom: 2px solid var(--corail); }
 .match__score { font-family: var(--font-title); font-weight: 600; font-size: 20px; color: var(--ocre); }
 .match__bar { height: 3px; background: var(--filet); margin: 8px 0 4px; }
 .match__bar span { display: block; height: 100%; background: var(--ocre); }
