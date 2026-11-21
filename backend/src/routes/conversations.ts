@@ -1,11 +1,13 @@
 import { Prisma } from '@prisma/client';
 import { Router } from 'express';
 import { z } from 'zod';
-import { loadSummaries, pairKey } from '../chat';
+import { loadSummaries, otherParticipantId, pairKey } from '../chat';
 import { toMessageResponse } from '../message';
 import { prisma } from '../prisma';
 import { validationError } from '../validation';
 import { requireAuth } from '../middleware/auth';
+import { emitToUser } from '../socket';
+
 
 const createConversationSchema = z.object({ userId: z.number().int() });
 const sendMessageSchema = z.object({ body: z.string().trim().min(1).max(2000) });
@@ -149,9 +151,13 @@ conversationsRouter.post('/:id/messages', async (req, res) => {
     }),
   ]);
 
-  // Next step: push the `message:new` event to both participants here
+    const payload = toMessageResponse(message);
 
-  res.status(201).json(toMessageResponse(message));
+  // Push the message live to both participants (every tab they have open)
+  emitToUser(otherParticipantId(conversation, userId), 'message:new', payload);
+  emitToUser(userId, 'message:new', payload);
+
+  res.status(201).json(payload);
 });
 
 // Mark the messages I received as read
@@ -164,10 +170,20 @@ conversationsRouter.post('/:id/read', async (req, res) => {
     return;
   }
 
+  const readAt = new Date();
   const result = await prisma.message.updateMany({
     where: { conversationId: conversation.id, senderId: { not: userId }, readAt: null },
-    data: { readAt: new Date() },
+    data: { readAt },
   });
+
+  // Tell the sender their messages were read
+  if (result.count > 0) {
+    emitToUser(otherParticipantId(conversation, userId), 'messages:read', {
+      conversationId: conversation.id,
+      readerId: userId,
+      readAt: readAt.toISOString(),
+    });
+  }
 
   // Next step: push the `messages:read` event to the other participant here
 

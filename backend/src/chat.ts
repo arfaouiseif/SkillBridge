@@ -44,3 +44,20 @@ export async function loadSummaries(userId: number, extraWhere: Prisma.Conversat
     };
   });
 }
+
+// The other person of a conversation
+export function otherParticipantId(
+  conversation: { userAId: number; userBId: number },
+  userId: number,
+): number {
+  return conversation.userAId === userId ? conversation.userBId : conversation.userAId;
+}
+
+// Everyone this user has a conversation with
+export async function partnerIdsOf(userId: number): Promise<number[]> {
+  const conversations = await prisma.conversation.findMany({
+    where: { OR: [{ userAId: userId }, { userBId: userId }] },
+    select: { userAId: true, userBId: true },
+  });
+  return conversations.map((c) => otherParticipantId(c, userId));
+}
