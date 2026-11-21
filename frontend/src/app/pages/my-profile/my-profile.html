@@ -83,7 +83,7 @@
         @for (m of matches(); track m.user.id) {
           <li class="match">
             <div class="match__head">
-              <span class="match__name">{{ m.user.name }}</span>
+              <a class="match__name" [routerLink]="['/membres', m.user.id]">{{ m.user.name }}</a>
               <span class="match__score">{{ m.score }} %</span>
             </div>
             <div class="match__bar"><span [style.width.%]="m.score"></span></div>
