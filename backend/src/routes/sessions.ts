@@ -5,6 +5,7 @@ import { sessionInclude, toSessionResponse } from '../session';
 import { toTunisTime } from '../time';
 import { validationError } from '../validation';
 import { requireAuth } from '../middleware/auth';
+import { Prisma } from '@prisma/client';
 
 const createSessionSchema = z.object({
   teacherId: z.number().int(),
@@ -12,6 +13,15 @@ const createSessionSchema = z.object({
   startAt: z.string().datetime({ offset: true }),
   durationMinutes: z.union([z.literal(30), z.literal(60), z.literal(90), z.literal(120)]),
   message: z.string().trim().max(300).nullable().optional(),
+});
+const listQuerySchema = z.object({
+  status: z.enum(['pending', 'accepted', 'declined', 'completed', 'cancelled']).optional(),
+  role: z.enum(['teacher', 'learner']).optional(),
+  when: z.enum(['upcoming', 'past']).optional(),
+});
+
+const statusSchema = z.object({
+  status: z.enum(['accepted', 'declined', 'cancelled', 'completed']),
 });
 
 export const sessionsRouter = Router();
@@ -124,4 +134,147 @@ sessionsRouter.post('/', async (req, res) => {
   });
 
   res.status(201).json(toSessionResponse(session));
+});
+
+// My sessions, as teacher or learner
+sessionsRouter.get('/', async (req, res) => {
+  const userId = res.locals.userId as number;
+
+  const parsed = listQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json(validationError(parsed.error));
+    return;
+  }
+  const { status, role, when } = parsed.data;
+
+  const where: Prisma.SessionWhereInput = {};
+  if (role === 'teacher') where.teacherId = userId;
+  else if (role === 'learner') where.learnerId = userId;
+  else where.OR = [{ teacherId: userId }, { learnerId: userId }];
+
+  if (status) where.status = status;
+
+  const now = new Date();
+  if (when === 'upcoming') where.endAt = { gt: now };
+  if (when === 'past') where.endAt = { lte: now };
+
+  const sessions = await prisma.session.findMany({
+    where,
+    include: sessionInclude,
+    orderBy: { startAt: when === 'upcoming' ? 'asc' : 'desc' },
+  });
+
+  res.json(sessions.map(toSessionResponse));
+});
+
+// Accept, decline, cancel or complete a session
+sessionsRouter.patch('/:id/status', async (req, res) => {
+  const userId = res.locals.userId as number;
+  const id = Number(req.params.id);
+
+  const parsed = statusSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json(validationError(parsed.error));
+    return;
+  }
+  const { status } = parsed.data;
+
+  const session = Number.isInteger(id) ? await prisma.session.findUnique({ where: { id } }) : null;
+
+  // A session you are not part of looks like it does not exist
+  if (!session || (session.teacherId !== userId && session.learnerId !== userId)) {
+    res.status(404).json({ message: 'Session not found' });
+    return;
+  }
+
+  const isTeacher = session.teacherId === userId;
+  const now = new Date();
+
+  // The rules from docs/openapi.yaml
+  if (status === 'accepted' || status === 'declined') {
+    if (!isTeacher) {
+      res.status(403).json({ message: 'Only the teacher can accept or decline a session' });
+      return;
+    }
+    if (session.status !== 'pending') {
+      res.status(409).json({ message: 'Only a pending session can be accepted or declined' });
+      return;
+    }
+  } else if (status === 'cancelled') {
+    if (session.status !== 'pending' && session.status !== 'accepted') {
+      res.status(409).json({ message: 'Only a pending or accepted session can be cancelled' });
+      return;
+    }
+    if (session.startAt <= now) {
+      res.status(409).json({ message: 'A session that has started cannot be cancelled' });
+      return;
+    }
+  } else {
+    // completed
+    if (session.status !== 'accepted') {
+      res.status(409).json({ message: 'Only an accepted session can be completed' });
+      return;
+    }
+    if (session.endAt > now) {
+      res.status(409).json({ message: 'The session has not ended yet' });
+      return;
+    }
+  }
+
+  // Everything except "accepted" is a plain update
+  if (status !== 'accepted') {
+    const updated = await prisma.session.update({
+      where: { id },
+      data: { status },
+      include: sessionInclude,
+    });
+    res.json(toSessionResponse(updated));
+    return;
+  }
+
+  // Accepting: check conflicts and save in one locked transaction
+  const result = await prisma.$transaction(async (tx) => {
+    // Lock both people, smallest id first, so two requests can never wait on each other forever
+    const [first, second] = [session.teacherId, session.learnerId].sort((a, b) => a - b);
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${first}::bigint)`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${second}::bigint)`;
+
+    // Re-read the session now that we hold the locks: it may have changed meanwhile
+    const fresh = await tx.session.findUnique({ where: { id } });
+    if (!fresh || fresh.status !== 'pending') return 'not-pending' as const;
+
+    // Any accepted session overlapping this one, for the teacher or the learner
+    const conflict = await tx.session.findFirst({
+      where: {
+        id: { not: id },
+        status: 'accepted',
+        startAt: { lt: fresh.endAt },
+        endAt: { gt: fresh.startAt },
+        OR: [
+          { teacherId: first },
+          { learnerId: first },
+          { teacherId: second },
+          { learnerId: second },
+        ],
+      },
+    });
+    if (conflict) return 'conflict' as const;
+
+    return tx.session.update({
+      where: { id },
+      data: { status: 'accepted' },
+      include: sessionInclude,
+    });
+  });
+
+  if (result === 'not-pending') {
+    res.status(409).json({ message: 'Only a pending session can be accepted or declined' });
+    return;
+  }
+  if (result === 'conflict') {
+    res.status(409).json({ message: 'Another accepted session overlaps this time' });
+    return;
+  }
+
+  res.json(toSessionResponse(result));
 });
