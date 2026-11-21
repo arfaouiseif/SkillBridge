@@ -1,0 +1,119 @@
+@baseUrl = http://localhost:3000/api
+
+### Login to get a token (send this one first)
+# @name login
+@baseUrl = http://localhost:3000/api
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "sarah.ben.ali@example.com",
+  "password": "Password123!"
+}
+
+### Login as Amine
+# @name loginAmine
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "email": "amine.gharbi@example.com", "password": "Password123!" }
+
+### My conversations (expect 2: Karim with unreadCount 0, Léa with unreadCount 2, online false)
+GET {{baseUrl}}/conversations
+Authorization: Bearer {{login.response.body.token}}
+
+### Unread badge (expect count 2)
+GET {{baseUrl}}/conversations/unread-count
+Authorization: Bearer {{login.response.body.token}}
+
+### Start a conversation with Amine (expect 201)
+# @name newConv
+POST {{baseUrl}}/conversations
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "userId": 3 }
+
+### Same again (expect 200 and the same id)
+POST {{baseUrl}}/conversations
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "userId": 3 }
+
+### Amine opens it from his side (expect 200 and the same id again)
+POST {{baseUrl}}/conversations
+Authorization: Bearer {{loginAmine.response.body.token}}
+Content-Type: application/json
+
+{ "userId": 1 }
+
+### Conversation with myself (expect 400)
+POST {{baseUrl}}/conversations
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "userId": 1 }
+
+### Unknown user (expect 404)
+POST {{baseUrl}}/conversations
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "userId": 9999 }
+
+### Send a message (expect 201, readAt null)
+POST {{baseUrl}}/conversations/{{newConv.response.body.id}}/messages
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "body": "Hi Amine, can you teach me how to fix a leaking tap?" }
+
+### Send a second message
+POST {{baseUrl}}/conversations/{{newConv.response.body.id}}/messages
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "body": "I can teach you Photoshop in exchange." }
+
+### Empty message (expect 400)
+POST {{baseUrl}}/conversations/{{newConv.response.body.id}}/messages
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "body": "   " }
+
+### History (expect the 2 messages, oldest first)
+GET {{baseUrl}}/conversations/{{newConv.response.body.id}}/messages
+Authorization: Bearer {{login.response.body.token}}
+
+### Only the latest message (expect 1, the second one)
+GET {{baseUrl}}/conversations/{{newConv.response.body.id}}/messages?limit=1
+Authorization: Bearer {{login.response.body.token}}
+
+### Invalid limit (expect 400)
+GET {{baseUrl}}/conversations/{{newConv.response.body.id}}/messages?limit=0
+Authorization: Bearer {{login.response.body.token}}
+
+### Amine's conversations (expect Sarah with unreadCount 2 and the last message)
+GET {{baseUrl}}/conversations
+Authorization: Bearer {{loginAmine.response.body.token}}
+
+### Amine's badge (expect count 2)
+GET {{baseUrl}}/conversations/unread-count
+Authorization: Bearer {{loginAmine.response.body.token}}
+
+### Amine marks them as read (expect updated 2)
+POST {{baseUrl}}/conversations/{{newConv.response.body.id}}/read
+Authorization: Bearer {{loginAmine.response.body.token}}
+
+### Amine's badge again (expect count 0)
+GET {{baseUrl}}/conversations/unread-count
+Authorization: Bearer {{loginAmine.response.body.token}}
+
+### Sarah reads the history again (expect readAt filled on both of her messages)
+GET {{baseUrl}}/conversations/{{newConv.response.body.id}}/messages
+Authorization: Bearer {{login.response.body.token}}
+
+### Without a token (expect 401)
+GET {{baseUrl}}/conversations

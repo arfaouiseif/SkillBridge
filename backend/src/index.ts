@@ -7,6 +7,7 @@ import { skillsRouter } from './routes/skills';
 import { matchesRouter } from './routes/matches';
 import { availabilityRouter } from './routes/availability';
 import { sessionsRouter } from './routes/sessions';
+import { conversationsRouter } from './routes/conversations';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -19,6 +20,7 @@ app.use('/api/users', availabilityRouter);
 app.use('/api/skills', skillsRouter);
 app.use('/api/matches', matchesRouter);
 app.use('/api/sessions', sessionsRouter);
+app.use('/api/conversations', conversationsRouter);
 
 app.get('/api/health', (_req,res) =>{
     res.json({status: 'ok'});
