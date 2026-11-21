@@ -316,3 +316,116 @@ POST {{baseUrl}}/sessions
 Content-Type: application/json
 
 { "teacherId": 2, "skillId": 1, "startAt": "2026-11-24T18:00:00+01:00", "durationMinutes": 60 }
+
+
+### Login as Karim
+# @name loginKarim
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "email": "karim.trabelsi@example.com", "password": "Password123!" }
+
+### Login as Hela
+# @name loginHela
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "email": "hela.sassi@example.com", "password": "Password123!" }
+
+### Sarah requests Tuesday 18:00-19:00 (expect 201 pending)
+# @name sarahRequest
+POST {{baseUrl}}/sessions
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "teacherId": 2, "skillId": 1, "startAt": "2026-12-01T18:00:00+01:00", "durationMinutes": 60 }
+
+### Hela requests an overlapping slot, 18:30-19:30 (expect 201: pending requests never block)
+# @name helaRequest
+POST {{baseUrl}}/sessions
+Authorization: Bearer {{loginHela.response.body.token}}
+Content-Type: application/json
+
+{ "teacherId": 2, "skillId": 1, "startAt": "2026-12-01T18:30:00+01:00", "durationMinutes": 60 }
+
+### Karim lists his pending requests (expect both, soonest first when using upcoming)
+GET {{baseUrl}}/sessions?role=teacher&status=pending&when=upcoming
+Authorization: Bearer {{loginKarim.response.body.token}}
+
+### Sarah lists her sessions as a learner (expect her request)
+GET {{baseUrl}}/sessions?role=learner
+Authorization: Bearer {{login.response.body.token}}
+
+### Invalid filter (expect 400)
+GET {{baseUrl}}/sessions?when=soon
+Authorization: Bearer {{login.response.body.token}}
+
+### Without a token (expect 401)
+GET {{baseUrl}}/sessions
+
+### Sarah tries to accept her own request (expect 403)
+PATCH {{baseUrl}}/sessions/{{sarahRequest.response.body.id}}/status
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "status": "accepted" }
+
+### Karim accepts Sarah's request (expect 200, status accepted)
+PATCH {{baseUrl}}/sessions/{{sarahRequest.response.body.id}}/status
+Authorization: Bearer {{loginKarim.response.body.token}}
+Content-Type: application/json
+
+{ "status": "accepted" }
+
+### Karim accepts it again (expect 409, no longer pending)
+PATCH {{baseUrl}}/sessions/{{sarahRequest.response.body.id}}/status
+Authorization: Bearer {{loginKarim.response.body.token}}
+Content-Type: application/json
+
+{ "status": "accepted" }
+
+### Karim accepts Hela's overlapping request (expect 409, another accepted session overlaps)
+PATCH {{baseUrl}}/sessions/{{helaRequest.response.body.id}}/status
+Authorization: Bearer {{loginKarim.response.body.token}}
+Content-Type: application/json
+
+{ "status": "accepted" }
+
+### Karim declines Hela's request (expect 200, status declined)
+PATCH {{baseUrl}}/sessions/{{helaRequest.response.body.id}}/status
+Authorization: Bearer {{loginKarim.response.body.token}}
+Content-Type: application/json
+
+{ "status": "declined" }
+
+### Karim's availability now shows the busy slot (expect 17:00Z-18:00Z on 2026-12-01 in busy)
+GET {{baseUrl}}/users/2/availability
+Authorization: Bearer {{login.response.body.token}}
+
+### Completing a session that has not ended (expect 409)
+PATCH {{baseUrl}}/sessions/{{sarahRequest.response.body.id}}/status
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "status": "completed" }
+
+### Sarah cancels (expect 200, status cancelled)
+PATCH {{baseUrl}}/sessions/{{sarahRequest.response.body.id}}/status
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "status": "cancelled" }
+
+### Sarah cancels again (expect 409)
+PATCH {{baseUrl}}/sessions/{{sarahRequest.response.body.id}}/status
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "status": "cancelled" }
+
+### A stranger cannot see the session (login as Hela, expect 404)
+PATCH {{baseUrl}}/sessions/{{sarahRequest.response.body.id}}/status
+Authorization: Bearer {{loginHela.response.body.token}}
+Content-Type: application/json
+
+{ "status": "cancelled" }
