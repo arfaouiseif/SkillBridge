@@ -17,6 +17,7 @@ tags:
   - name: Matches
   - name: Availability
   - name: Sessions
+  - name: Chat
 
 paths:
   /auth/register:
@@ -444,6 +445,186 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /conversations:
+    post:
+      tags: [Chat]
+      summary: Start (or reopen) a conversation with a user
+      description: |
+        There is at most one conversation per pair of users. If it already exists it is
+        returned with 200, otherwise it is created and returned with 201.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConversationRequest'
+      responses:
+        '200':
+          description: The conversation already existed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationSummary'
+        '201':
+          description: Conversation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationSummary'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags: [Chat]
+      summary: List my conversations
+      description: Most recent activity first. Includes the last message and my unread count.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: My conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConversationSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /conversations/unread-count:
+    get:
+      tags: [Chat]
+      summary: Total number of unread messages (for the navbar badge)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Unread messages across all my conversations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnreadCount'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /conversations/{id}/messages:
+    get:
+      tags: [Chat]
+      summary: Message history of a conversation
+      description: |
+        Returns up to `limit` messages in chronological order (oldest first).
+        Without `before`, these are the latest messages. To load older ones, pass the id of the
+        oldest message already loaded as `before`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: before
+          in: query
+          description: Only messages with an id lower than this one
+          schema: { type: integer }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 30 }
+      responses:
+        '200':
+          description: Messages, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Conversation not found, or the user is not a participant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags: [Chat]
+      summary: Send a message
+      description: |
+        Messages are sent through this endpoint. The other participant, if connected,
+        receives it instantly through the real-time `message:new` event (see docs/realtime.md).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '201':
+          description: Message saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Conversation not found, or the user is not a participant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /conversations/{id}/read:
+    post:
+      tags: [Chat]
+      summary: Mark the messages I received in this conversation as read
+      description: |
+        Sets `readAt` on every unread message sent by the other participant and notifies
+        them through the real-time `messages:read` event.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Number of messages that were marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Conversation not found, or the user is not a participant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'              
+
 components:
   securitySchemes:
     bearerAuth:
@@ -797,6 +978,92 @@ components:
         status:
           type: string
           enum: [accepted, declined, cancelled, completed]
+
+
+    ChatUser:
+      type: object
+      required: [id, name, online]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        online:
+          type: boolean
+          description: Connected right now (live changes arrive through the `presence` event)
+
+    Message:
+      type: object
+      required: [id, conversationId, senderId, body, createdAt, readAt]
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        senderId:
+          type: integer
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the recipient read it, null while unread
+
+    ConversationSummary:
+      type: object
+      required: [id, otherUser, lastMessage, unreadCount, updatedAt]
+      properties:
+        id:
+          type: integer
+        otherUser:
+          $ref: '#/components/schemas/ChatUser'
+        lastMessage:
+          allOf:
+            - $ref: '#/components/schemas/Message'
+          nullable: true
+        unreadCount:
+          type: integer
+          description: Messages from the other user that I have not read yet
+        updatedAt:
+          type: string
+          format: date-time
+          description: Time of the last message, or of the creation if there is none
+
+    CreateConversationRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: integer
+          description: The user to talk to (cannot be the signed-in user)
+
+    SendMessageRequest:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: Plain text, trimmed by the server
+
+    UnreadCount:
+      type: object
+      required: [count]
+      properties:
+        count:
+          type: integer
+
+    ReadResult:
+      type: object
+      required: [updated]
+      properties:
+        updated:
+          type: integer
     Error:
       type: object
       required: [message]
