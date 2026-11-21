@@ -8,6 +8,9 @@ import { matchesRouter } from './routes/matches';
 import { availabilityRouter } from './routes/availability';
 import { sessionsRouter } from './routes/sessions';
 import { conversationsRouter } from './routes/conversations';
+import { createServer } from 'http';
+import { initSocket } from './socket';
+
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -26,7 +29,10 @@ app.get('/api/health', (_req,res) =>{
     res.json({status: 'ok'});
 });
 
-app.listen(PORT, ()=>{
+const server = createServer(app);
+initSocket(server);
+
+server.listen(PORT, ()=>{
     console.log(`API running on http://localhost:${PORT}`);
 
 })
