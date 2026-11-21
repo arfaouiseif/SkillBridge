@@ -234,3 +234,85 @@ Authorization: Bearer {{login.response.body.token}}
 
 ### Without a token (expect 401)
 GET {{baseUrl}}/users/2/availability
+
+### Request a session (expect 201, status pending, teacher Karim, skill Python)
+POST {{baseUrl}}/sessions
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "teacherId": 2,
+  "skillId": 1,
+  "startAt": "2026-11-24T18:00:00+01:00",
+  "durationMinutes": 60,
+  "message": "Hi Karim, I would love to start with Python basics."
+}
+
+### Same instant written in UTC (expect 409, already requested)
+POST {{baseUrl}}/sessions
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "teacherId": 2, "skillId": 1, "startAt": "2026-11-24T17:00:00Z", "durationMinutes": 60 }
+
+### Ends after the window closes at 20:00 (expect 400)
+POST {{baseUrl}}/sessions
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "teacherId": 2, "skillId": 1, "startAt": "2026-11-24T19:30:00+01:00", "durationMinutes": 60 }
+
+### Wrong weekday, a Wednesday (expect 400)
+POST {{baseUrl}}/sessions
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "teacherId": 2, "skillId": 1, "startAt": "2026-11-25T18:00:00+01:00", "durationMinutes": 60 }
+
+### Not on a half hour (expect 400)
+POST {{baseUrl}}/sessions
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "teacherId": 2, "skillId": 1, "startAt": "2026-11-24T18:15:00+01:00", "durationMinutes": 60 }
+
+### In the past (expect 400)
+POST {{baseUrl}}/sessions
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "teacherId": 2, "skillId": 1, "startAt": "2020-01-07T18:00:00+01:00", "durationMinutes": 60 }
+
+### Karim does not teach Photoshop (expect 400)
+POST {{baseUrl}}/sessions
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "teacherId": 2, "skillId": 8, "startAt": "2026-11-24T18:00:00+01:00", "durationMinutes": 60 }
+
+### Booking with myself (expect 400)
+POST {{baseUrl}}/sessions
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "teacherId": 1, "skillId": 1, "startAt": "2026-11-24T18:00:00+01:00", "durationMinutes": 60 }
+
+### Unknown teacher (expect 404)
+POST {{baseUrl}}/sessions
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "teacherId": 9999, "skillId": 1, "startAt": "2026-11-24T18:00:00+01:00", "durationMinutes": 60 }
+
+### Invalid duration (expect 400 with details)
+POST {{baseUrl}}/sessions
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "teacherId": 2, "skillId": 1, "startAt": "2026-11-24T18:00:00+01:00", "durationMinutes": 45 }
+
+### Without a token (expect 401)
+POST {{baseUrl}}/sessions
+Content-Type: application/json
+
+{ "teacherId": 2, "skillId": 1, "startAt": "2026-11-24T18:00:00+01:00", "durationMinutes": 60 }
