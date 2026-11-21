@@ -38,6 +38,10 @@ async function main() {
 
   if (conversationArg) {
     const conversationId = Number(conversationArg);
+        if (!Number.isInteger(conversationId)) {
+      console.log(`"${conversationArg}" is not a valid conversation id`);
+      process.exit(1);
+    }
     console.log(`Press Enter to send "typing" in conversation ${conversationId}`);
     process.stdin.on('data', () => {
       socket.emit('typing', { conversationId, isTyping: true });
