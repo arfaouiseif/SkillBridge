@@ -64,6 +64,42 @@ function emailFor(name: string): string {
   const clean = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '.');
   return `${clean}@example.com`;
 }
+// Creates (or recreates) a conversation between two users.
+// In `lines`, 'A' is the first name given and 'B' the second.
+// The last `unreadLast` messages are left unread.
+async function seedConversation(
+  nameA: string,
+  nameB: string,
+  lines: ['A' | 'B', string][],
+  unreadLast = 0,
+) {
+  const a = await prisma.user.findUniqueOrThrow({ where: { email: emailFor(nameA) } });
+  const b = await prisma.user.findUniqueOrThrow({ where: { email: emailFor(nameB) } });
+  const [userAId, userBId] = a.id < b.id ? [a.id, b.id] : [b.id, a.id];
+
+  await prisma.conversation.deleteMany({ where: { userAId, userBId } });
+  const conversation = await prisma.conversation.create({ data: { userAId, userBId } });
+
+  const now = Date.now();
+  const rows = lines.map(([who, body], i) => {
+    const createdAt = new Date(now - (lines.length - i) * 10 * 60 * 1000);
+    const unread = i >= lines.length - unreadLast;
+    return {
+      conversationId: conversation.id,
+      senderId: who === 'A' ? a.id : b.id,
+      body,
+      createdAt,
+      readAt: unread ? null : createdAt,
+    };
+  });
+
+  await prisma.message.createMany({ data: rows });
+  await prisma.conversation.update({
+    where: { id: conversation.id },
+    data: { updatedAt: rows[rows.length - 1].createdAt },
+  });
+}
+
 
 async function main() {
   // 1. Skills catalogue
@@ -111,11 +147,27 @@ async function main() {
     await prisma.userSkill.deleteMany({ where: { userId: user.id } });
     await prisma.userSkill.createMany({ data: rows });
   }
-
+    // 3. Demo conversations
+  await seedConversation('Sarah Ben Ali', 'Karim Trabelsi', [
+    ['A', 'Hi Karim! I saw you teach Python and want to learn Photoshop.'],
+    ['B', 'Hi Sarah! Yes, I would love a Photoshop session in exchange.'],
+    ['A', 'Perfect. Are you free on Tuesday evening?'],
+    ['B', 'Tuesday at 18:00 works for me.'],
+  ]);
+  await seedConversation(
+    'Sarah Ben Ali',
+    'Léa Mansour',
+    [
+      ['B', 'Hello Sarah, do you also do logo design?'],
+      ['B', 'I am looking for help with a poster.'],
+    ],
+    2,
+  );
   console.log(`Seeded ${skillByName.size} skills and ${users.length} users.`);
 }
 
 main()
+
   .catch((e) => {
     console.error(e);
     process.exit(1);
