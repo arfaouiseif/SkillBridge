@@ -96,3 +96,15 @@ export const DURATIONS: { value: 30 | 60 | 90 | 120; label: string }[] = [
   { value: 90, label: '1 h 30' },
   { value: 120, label: '2 heures' },
 ];
+
+
+/** Day and time range of a session, in Tunisia time. */
+export function formatSessionTime(startIso: string, endIso: string) {
+  const start = new Date(new Date(startIso).getTime() + TUNIS_OFFSET);
+  const end = new Date(new Date(endIso).getTime() + TUNIS_OFFSET);
+  const hm = (d: Date) => `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+  return {
+    day: `${WEEKDAYS_SHORT[start.getUTCDay()]} ${start.getUTCDate()} ${MONTHS_SHORT[start.getUTCMonth()]}`,
+    range: `${hm(start)} – ${hm(end)}`,
+  };
+}

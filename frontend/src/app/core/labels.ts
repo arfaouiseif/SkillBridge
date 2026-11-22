@@ -1,4 +1,4 @@
-import { SkillCategory, SkillLevel, SkillMode } from './models/api.models';
+import { SkillCategory, SkillLevel, SkillMode , SessionStatus } from './models/api.models';
 
 export const LEVEL_LABELS: Record<SkillLevel, string> = {
   beginner: 'débutant',
@@ -21,4 +21,13 @@ export const MODE_LABELS: Record<SkillMode, string> = {
   online: 'en ligne',
   in_person: 'sur place',
   both: 'en ligne ou sur place',
+};
+
+
+export const STATUS_LABELS: Record<SessionStatus, string> = {
+  pending: 'En attente',
+  accepted: 'Confirmée',
+  declined: 'Refusée',
+  completed: 'Terminée',
+  cancelled: 'Annulée',
 };
