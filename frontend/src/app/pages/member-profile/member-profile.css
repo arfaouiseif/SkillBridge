@@ -19,6 +19,9 @@
 .member__skill-name { font-family: var(--font-title); font-weight: 600; font-size: 18px; }
 .member__skill-meta { font-size: 13px; color: var(--ardoise); text-align: right; }
 .member__none { color: var(--ardoise); font-size: 13px; }
+.member__actions { margin-top: 28px; }
+.member__actions .btn { display: inline-block; text-decoration: none; }
+
 
 @media (max-width: 700px) {
   .member__name { font-size: 38px; }

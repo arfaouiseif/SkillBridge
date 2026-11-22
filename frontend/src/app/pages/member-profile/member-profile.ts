@@ -5,6 +5,7 @@ import { catchError, map, of, switchMap, tap } from 'rxjs';
 import { LEVEL_LABELS, MODE_LABELS } from '../../core/labels';
 import { PublicUser } from '../../core/models/api.models';
 import { Users } from '../../core/users';
+import { Auth } from '../../core/auth';
 
 type LoadState = 'loading' | 'ready' | 'notfound' | 'error';
 
@@ -17,6 +18,7 @@ type LoadState = 'loading' | 'ready' | 'notfound' | 'error';
 export class MemberProfile {
   private route = inject(ActivatedRoute);
   private users = inject(Users);
+  private auth = inject(Auth);
 
   protected readonly levelLabels = LEVEL_LABELS;
   protected readonly modeLabels = MODE_LABELS;
@@ -35,6 +37,7 @@ export class MemberProfile {
     if (!m) return '';
     return [m.university, m.year ? `Année ${m.year}` : null, m.city].filter(Boolean).join(' · ');
   });
+  protected readonly isSelf = computed(()=> this.auth.user()?.id === this.member()?.id );
 
   constructor() {
     this.route.paramMap
