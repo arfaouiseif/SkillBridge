@@ -25,7 +25,11 @@ export const routes: Routes = [
         path: 'mon-profil',
         loadComponent: () => import('./pages/my-profile/my-profile').then((m) => m.MyProfile),
       },
-            {
+      {
+        path: 'mes-sessions',
+        loadComponent: () => import('./pages/my-sessions/my-sessions').then((m) => m.MySessions),
+      },
+      {
         path: 'membres/:id/reserver',
         loadComponent: () => import('./pages/book-session/book-session').then((m) => m.BookSession),
       },
