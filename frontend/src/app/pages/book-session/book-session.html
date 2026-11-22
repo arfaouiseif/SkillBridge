@@ -1,0 +1,149 @@
+<main class="book">
+  @switch (state()) {
+    @case ('loading') {
+      <p class="book__state">Chargement…</p>
+    }
+    @case ('notfound') {
+      <span class="eyebrow">Réservation</span>
+      <h1 class="book__title">Ce membre n'existe pas.</h1>
+      <p class="book__state"><a class="link" routerLink="/explorer">Retour à l'exploration</a></p>
+    }
+    @case ('error') {
+      <p class="form-error" role="alert">Impossible de charger la page de réservation.</p>
+      <p class="book__state"><a class="link" routerLink="/explorer">Retour à l'exploration</a></p>
+    }
+    @case ('ready') {
+      @if (member(); as m) {
+        <a class="book__back" [routerLink]="['/membres', m.id]">← Profil de {{ m.name }}</a>
+
+        @if (booked(); as session) {
+          <span class="eyebrow">Demande envoyée</span>
+          <h1 class="book__title">{{ session.skill.name }} avec {{ m.name }}</h1>
+          <p class="book__done">
+            {{ selected()?.dayLong }} à {{ selected()?.time }} · {{ durationLabel() }}.<br />
+            {{ m.name }} doit maintenant accepter ta demande.
+          </p>
+          <a class="btn btn-secondary book__cta" [routerLink]="['/membres', m.id]">Retour au profil</a>
+        } @else if (isSelf()) {
+          <span class="eyebrow">Réservation</span>
+          <h1 class="book__title">C'est ton propre profil.</h1>
+          <p class="book__state">Tu ne peux pas réserver une session avec toi-même.</p>
+        } @else if (teach().length === 0) {
+          <span class="eyebrow">Réservation</span>
+          <h1 class="book__title">{{ m.name }} n'enseigne rien pour l'instant.</h1>
+          <p class="book__state">Reviens quand une compétence sera ajoutée à son profil.</p>
+        } @else {
+          <div class="book__layout">
+            <section class="book__main">
+              <span class="eyebrow">Réserver une session</span>
+              <h1 class="book__title">{{ skill()?.skill?.name }} avec {{ m.name }}</h1>
+
+              <div class="book__options">
+                @if (teach().length > 1) {
+                  <label>
+                    <span class="book__label">Compétence</span>
+                    <select class="book__select" (change)="setSkill($any($event.target).value)">
+                      @for (s of teach(); track s.skillId) {
+                        <option [value]="s.skillId" [selected]="s.skillId === skillId()">{{ s.skill?.name }}</option>
+                      }
+                    </select>
+                  </label>
+                }
+                <label>
+                  <span class="book__label">Durée</span>
+                  <select class="book__select" (change)="setDuration($any($event.target).value)">
+                    @for (d of durations; track d.value) {
+                      <option [value]="d.value" [selected]="d.value === duration()">{{ d.label }}</option>
+                    }
+                  </select>
+                </label>
+              </div>
+
+              @if (!hasWindows()) {
+                <p class="book__state">{{ m.name }} n'a pas encore défini ses disponibilités.</p>
+              } @else {
+                <div class="book__pager">
+                  <button type="button" class="book__arrow" [disabled]="weekOffset() === 0" (click)="shiftWeek(-1)" aria-label="Semaine précédente">←</button>
+                  <span>{{ rangeLabel() }}</span>
+                  <button type="button" class="book__arrow" [disabled]="weekOffset() >= 7" (click)="shiftWeek(1)" aria-label="Semaine suivante">→</button>
+                </div>
+
+                <div class="cal-wrap">
+                  <div class="cal" role="group" aria-label="Créneaux disponibles">
+                    @for (col of columns(); track col.day.wall) {
+                      <div class="cal__col">
+                        <div class="cal__head">{{ col.day.label }}</div>
+                        @for (slot of col.slots; track slot.iso) {
+                          <button
+                            type="button"
+                            class="cal__slot"
+                            [class.is-selected]="selected()?.iso === slot.iso"
+                            [attr.aria-pressed]="selected()?.iso === slot.iso"
+                            (click)="pick(slot)"
+                          >
+                            {{ slot.time }}
+                          </button>
+                        } @empty {
+                          <span class="cal__none">—</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+                <p class="book__tz">Horaires de Tunisie (UTC+1).</p>
+
+                @if (!anySlot()) {
+                  <p class="book__state">Aucun créneau libre cette semaine. Essaie la semaine suivante ou une durée plus courte.</p>
+                }
+              }
+
+              @if (selected(); as slot) {
+                <div class="book__summary">
+                  <p>{{ slot.dayLong }} à {{ slot.time }} · {{ durationLabel() }} · {{ skill() ? modeLabels[skill()!.mode] : '' }}</p>
+
+                  <label>
+                    <span class="book__label">Un mot pour {{ m.name }} (facultatif)</span>
+                    <textarea
+                      class="field book__message"
+                      rows="3"
+                      maxlength="300"
+                      [value]="message()"
+                      (input)="message.set($any($event.target).value)"
+                    ></textarea>
+                  </label>
+
+                  @if (error()) {
+                    <p class="form-error" role="alert">{{ error() }}</p>
+                  }
+
+                  <button class="btn btn-primary book__cta" type="button" [disabled]="submitting()" (click)="submit()">
+                    {{ submitting() ? 'Envoi…' : 'Demander la session' }}
+                  </button>
+                </div>
+              } @else if (error()) {
+                <p class="form-error" role="alert">{{ error() }}</p>
+              }
+            </section>
+
+            <aside class="book__side">
+              <h2 class="book__side-name">{{ m.name }}</h2>
+              @if (skill(); as s) {
+                <p class="book__side-line">
+                  Enseigne {{ s.skill?.name }} · {{ levelLabels[s.level] }}
+                </p>
+              }
+              @if (learn().length) {
+                <span class="eyebrow">En échange, cherche</span>
+                <ul>
+                  @for (l of learn(); track l.skillId) {
+                    <li>{{ l.skill?.name }} <small>{{ levelLabels[l.level] }}</small></li>
+                  }
+                </ul>
+              }
+            </aside>
+          </div>
+        }
+      }
+    }
+  }
+</main>
