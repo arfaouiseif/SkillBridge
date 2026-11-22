@@ -38,6 +38,8 @@
 .book__side li { padding: 8px 0; border-bottom: 1px solid var(--filet); font-size: 14px; }
 .book__side small { color: var(--ardoise); margin-left: 6px; }
 
+.book__cta-link { margin-left: 24px; font-size: 14px; }
+
 @media (max-width: 860px) {
   .book__layout { grid-template-columns: 1fr; gap: 40px; }
   .book__side { padding-left: 0; border-left: 0; border-top: 1px solid var(--filet); padding-top: 24px; }

@@ -23,7 +23,8 @@
             {{ selected()?.dayLong }} à {{ selected()?.time }} · {{ durationLabel() }}.<br />
             {{ m.name }} doit maintenant accepter ta demande.
           </p>
-          <a class="btn btn-secondary book__cta" [routerLink]="['/membres', m.id]">Retour au profil</a>
+          <a class="btn btn-primary book__cta" routerLink="/mes-sessions">Voir mes sessions</a>
+          <a class="link book__cta-link" [routerLink]="['/membres', m.id]">Retour au profil</a>
         } @else if (isSelf()) {
           <span class="eyebrow">Réservation</span>
           <h1 class="book__title">C'est ton propre profil.</h1>
