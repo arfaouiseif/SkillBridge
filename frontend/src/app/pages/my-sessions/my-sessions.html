@@ -1,0 +1,80 @@
+<main class="sessions">
+  <span class="eyebrow">Mes sessions</span>
+  <h1 class="sessions__title">Tes sessions.</h1>
+
+  <div class="sessions__tabs" role="tablist">
+    <button type="button" role="tab" class="sessions__tab" [class.is-active]="tab() === 'upcoming'"
+      [attr.aria-selected]="tab() === 'upcoming'" (click)="setTab('upcoming')">À venir</button>
+    <button type="button" role="tab" class="sessions__tab" [class.is-active]="tab() === 'past'"
+      [attr.aria-selected]="tab() === 'past'" (click)="setTab('past')">Passées</button>
+  </div>
+
+  @if (tab() === 'upcoming' && toAnswer() > 0) {
+    <p class="sessions__alert" role="status">
+      {{ toAnswer() }} {{ toAnswer() > 1 ? 'demandes attendent' : 'demande attend' }} ta réponse.
+    </p>
+  }
+
+  @if (actionError()) {
+    <p class="form-error" role="alert">{{ actionError() }}</p>
+  }
+
+  @if (error()) {
+    <p class="form-error" role="alert">{{ error() }}</p>
+  } @else if (loading() || !auth.user()) {
+    <p class="sessions__state">Chargement…</p>
+  } @else if (rows().length === 0) {
+    <p class="sessions__state">
+      @if (tab() === 'upcoming') {
+        Aucune session à venir. <a class="link" routerLink="/explorer">Trouve un membre</a> pour en proposer une.
+      } @else {
+        Aucune session passée.
+      }
+    </p>
+  } @else {
+    <ul class="sessions__list">
+      @for (r of rows(); track r.session.id) {
+        <li class="session" [class.is-inactive]="r.inactive">
+          <div class="session__when">
+            <span class="session__day">{{ r.when.day }}</span>
+            <span class="session__time">{{ r.when.range }}</span>
+          </div>
+
+          <div class="session__body">
+            <p class="session__title">
+              {{ r.session.skill.name }} avec
+              <a class="session__link" [routerLink]="['/membres', r.other.id]">{{ r.other.name }}</a>
+            </p>
+            <p class="session__role">{{ r.iAmTeacher ? 'Tu enseignes' : 'Tu apprends' }}</p>
+            @if (r.session.message) {
+              <p class="session__message">« {{ r.session.message }} »</p>
+            }
+            @if (r.session.status === 'accepted' && r.session.meetingLink) {
+              <a class="link session__meeting" [href]="r.session.meetingLink" target="_blank" rel="noopener">Rejoindre</a>
+            }
+          </div>
+
+          <div class="session__side">
+            <span [class]="'badge badge--' + r.session.status">{{ statusLabels[r.session.status] }}</span>
+            <div class="session__actions">
+              @if (r.canAnswer) {
+                <button type="button" class="btn btn-primary session__btn" [disabled]="busyId() === r.session.id"
+                  (click)="change(r, 'accepted')">Accepter</button>
+                <button type="button" class="btn btn-secondary session__btn" [disabled]="busyId() === r.session.id"
+                  (click)="change(r, 'declined')">Refuser</button>
+              }
+              @if (r.canComplete) {
+                <button type="button" class="btn btn-secondary session__btn" [disabled]="busyId() === r.session.id"
+                  (click)="change(r, 'completed')">Marquer comme terminée</button>
+              }
+              @if (r.canCancel) {
+                <button type="button" class="session__cancel" [disabled]="busyId() === r.session.id"
+                  (click)="change(r, 'cancelled')">Annuler</button>
+              }
+            </div>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</main>

@@ -1,0 +1,65 @@
+.sessions { max-width: 1040px; margin: 0 auto; padding: 48px 24px 64px; }
+.sessions__title { font-size: 34px; margin: 8px 0 24px; }
+.sessions__state { color: var(--ardoise); font-size: 14px; margin-top: 28px; }
+
+.sessions__tabs { display: flex; gap: 24px; border-bottom: 1px solid var(--filet); }
+.sessions__tab {
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 8px 0;
+  font: 500 14px var(--font-body);
+  color: var(--ardoise);
+  cursor: pointer;
+}
+.sessions__tab.is-active { color: var(--encre); font-weight: 600; border-bottom-color: var(--corail); }
+
+.sessions__alert { margin: 20px 0 0; font-size: 14px; font-weight: 600; color: var(--ocre); }
+
+.sessions__list { list-style: none; margin: 8px 0 0; padding: 0; }
+.session {
+  display: grid;
+  grid-template-columns: 150px 1fr auto;
+  gap: 24px;
+  align-items: start;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--filet);
+}
+.session.is-inactive { opacity: .55; }
+
+.session__day { display: block; font-family: var(--font-title); font-weight: 600; font-size: 18px; }
+.session__time { display: block; font-size: 13px; color: var(--ardoise); margin-top: 2px; }
+
+.session__title { margin: 0; font-size: 16px; }
+.session__link { color: var(--encre); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--corail); }
+.session__role { margin: 4px 0 0; font-size: 13px; color: var(--ardoise); }
+.session__message { margin: 8px 0 0; font-size: 13px; font-style: italic; max-width: 52ch; }
+.session__meeting { display: inline-block; margin-top: 10px; font-size: 13px; }
+
+.session__side { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+.session__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
+.session__btn { padding: 8px 14px; font-size: 13px; }
+.session__btn:disabled, .session__cancel:disabled { opacity: .5; cursor: default; }
+.session__cancel { background: none; border: 0; padding: 8px 4px; font: 500 13px var(--font-body); color: var(--ardoise); text-decoration: underline; cursor: pointer; }
+.session__cancel:hover { color: var(--encre); }
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius);
+  color: var(--ardoise);
+}
+.badge--pending { color: var(--ocre); }
+.badge--accepted { color: var(--sarcelle); }
+.badge--completed { color: var(--sarcelle); }
+
+@media (max-width: 720px) {
+  .session { grid-template-columns: 1fr; gap: 12px; }
+  .session__side { align-items: flex-start; }
+  .session__actions { justify-content: flex-start; }
+}
