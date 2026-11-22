@@ -24,6 +24,11 @@
         @if (m.bio) {
           <p class="member__bio">{{ m.bio }}</p>
         }
+        @if (teach().length > 0 && !isSelf()) {
+          <div class="member__actions">
+            <a class="btn btn-primary" [routerLink]="['/membres', m.id, 'reserver']">Réserver une session</a>
+          </div>
+        }
 
         <div class="member__skills">
           <section>

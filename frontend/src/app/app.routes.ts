@@ -26,6 +26,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/my-profile/my-profile').then((m) => m.MyProfile),
       },
             {
+        path: 'membres/:id/reserver',
+        loadComponent: () => import('./pages/book-session/book-session').then((m) => m.BookSession),
+      },
+      {
         path: 'membres/:id',
         loadComponent: () => import('./pages/member-profile/member-profile').then((m) => m.MemberProfile),
       },
