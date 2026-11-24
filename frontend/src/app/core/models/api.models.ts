@@ -75,3 +75,26 @@ export interface Match {
   theyTeachMe: Skill[];
   iTeachThem: Skill[];
 }
+
+export interface ChatUser { id: number; name: string; online: boolean; }
+
+export interface Message {
+  id: number;
+  conversationId: number;
+  senderId: number;
+  body: string;
+  createdAt: string;
+  readAt: string | null;
+}
+
+export interface ConversationSummary {
+  id: number;
+  otherUser: ChatUser;
+  lastMessage: Message | null;
+  unreadCount: number;
+  updatedAt: string;
+}
+
+export interface ReadEvent { conversationId: number; readerId: number; readAt: string; }
+export interface TypingEvent { conversationId: number; userId: number; isTyping: boolean; }
+export interface PresenceEvent { userId: number; online: boolean; }

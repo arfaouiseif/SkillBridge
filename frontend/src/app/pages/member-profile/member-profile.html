@@ -24,10 +24,18 @@
         @if (m.bio) {
           <p class="member__bio">{{ m.bio }}</p>
         }
-        @if (teach().length > 0 && !isSelf()) {
+        @if (!isSelf()) {
           <div class="member__actions">
-            <a class="btn btn-primary" [routerLink]="['/membres', m.id, 'reserver']">Réserver une session</a>
+            @if (teach().length > 0) {
+              <a class="btn btn-primary" [routerLink]="['/membres', m.id, 'reserver']">Réserver une session</a>
+            }
+            <button type="button" class="member__message" [disabled]="messaging()" (click)="startChat()">
+              Envoyer un message
+            </button>
           </div>
+          @if (messageError()) {
+            <p class="form-error" role="alert">{{ messageError() }}</p>
+          }
         }
 
         <div class="member__skills">

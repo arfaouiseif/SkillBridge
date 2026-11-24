@@ -1,6 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Auth } from '../../core/auth';
+import { Chat } from '../../core/chat';
 
 @Component({
   imports: [RouterLink, RouterLinkActive],
@@ -10,6 +11,7 @@ import { Auth } from '../../core/auth';
 })
 export class Navbar {
   protected auth = inject(Auth);
+  protected chat = inject(Chat);
   protected readonly firstName = computed(() => this.auth.user()?.name.split(' ')[0] ?? '');
 
   constructor() {

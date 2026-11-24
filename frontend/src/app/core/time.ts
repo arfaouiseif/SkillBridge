@@ -108,3 +108,13 @@ export function formatSessionTime(startIso: string, endIso: string) {
     range: `${hm(start)} – ${hm(end)}`,
   };
 }
+
+/** Day and clock time of an instant, in Tunisia time. */
+export function formatInstant(iso: string) {
+  const d = new Date(new Date(iso).getTime() + TUNIS_OFFSET);
+  return {
+    dayKey: d.toISOString().slice(0, 10),
+    day: `${WEEKDAYS_SHORT[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS_SHORT[d.getUTCMonth()]}`,
+    time: `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`,
+  };
+}

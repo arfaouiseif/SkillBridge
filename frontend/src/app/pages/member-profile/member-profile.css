@@ -19,9 +19,10 @@
 .member__skill-name { font-family: var(--font-title); font-weight: 600; font-size: 18px; }
 .member__skill-meta { font-size: 13px; color: var(--ardoise); text-align: right; }
 .member__none { color: var(--ardoise); font-size: 13px; }
-.member__actions { margin-top: 28px; }
+.member__actions { display: flex; align-items: center; gap: 28px; margin-top: 28px; }
 .member__actions .btn { display: inline-block; text-decoration: none; }
-
+.member__message { background: none; border: 0; border-bottom: 2px solid var(--corail); padding: 0 0 2px; font: 600 14px var(--font-body); color: var(--encre); cursor: pointer; }
+.member__message:disabled { opacity: .5; cursor: default; }
 
 @media (max-width: 700px) {
   .member__name { font-size: 38px; }
