@@ -1,11 +1,12 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink , Router } from '@angular/router';
 import { catchError, map, of, switchMap, tap } from 'rxjs';
 import { LEVEL_LABELS, MODE_LABELS } from '../../core/labels';
 import { PublicUser } from '../../core/models/api.models';
 import { Users } from '../../core/users';
 import { Auth } from '../../core/auth';
+import { Chat } from '../../core/chat';
 
 type LoadState = 'loading' | 'ready' | 'notfound' | 'error';
 
@@ -19,12 +20,17 @@ export class MemberProfile {
   private route = inject(ActivatedRoute);
   private users = inject(Users);
   private auth = inject(Auth);
+  private chat = inject(Chat);
+  private router = inject(Router);
 
   protected readonly levelLabels = LEVEL_LABELS;
   protected readonly modeLabels = MODE_LABELS;
 
   protected readonly state = signal<LoadState>('loading');
   protected readonly member = signal<PublicUser | null>(null);
+
+  protected readonly messaging = signal(false);
+  protected readonly messageError = signal<string | null>(null);
 
   protected readonly teach = computed(
     () => this.member()?.skills.filter((s) => s.type === 'teach') ?? [],
@@ -63,5 +69,18 @@ export class MemberProfile {
         this.member.set(member);
         this.state.set(state);
       });
+  }
+  protected startChat() {
+  const member = this.member();
+  if (!member) return;
+  this.messaging.set(true);
+  this.messageError.set(null);
+  this.chat.start(member.id).subscribe({
+    next: (conversation) => this.router.navigate(['/messages', conversation.id]),
+    error: () => {
+      this.messageError.set('Impossible d’ouvrir la conversation.');
+      this.messaging.set(false);
+    },
+  });
   }
 }

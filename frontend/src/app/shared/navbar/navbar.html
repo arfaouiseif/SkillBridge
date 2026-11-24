@@ -5,6 +5,12 @@
     </a>
     <a routerLink="/explorer" routerLinkActive="is-active">Explorer</a>
         @if (auth.isLoggedIn()) {
+      <a routerLink="/messages" routerLinkActive="is-active">
+        Messages
+        @if (chat.unread() > 0) {
+          <span class="navbar__badge" aria-label="{{ chat.unread() }} messages non lus">{{ chat.unread() }}</span>
+        }
+      </a>
       <a routerLink="/mes-sessions" routerLinkActive="is-active">Mes sessions</a>
       <a routerLink="/mon-profil" routerLinkActive="is-active">Mon profil</a>
     }
