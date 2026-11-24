@@ -1,6 +1,16 @@
-import { Routes } from '@angular/router';
+import { Routes, UrlMatcher, UrlSegment } from '@angular/router';
 import { authGuard } from './core/auth-guard';
 import { MainLayout } from './layout/main-layout/main-layout';
+
+// /messages and /messages/:id share one component instance, so switching conversation does not reload the page
+const messagesMatcher: UrlMatcher = (segments) => {
+  if (segments[0]?.path !== 'messages' || segments.length > 2) return null;
+  const posParams: Record<string, UrlSegment> = {};
+  const id = segments[1];
+  if (id) posParams['id'] = id;
+  return { consumed: segments, posParams };
+};
+
 
 export const routes: Routes = [
   {
@@ -28,6 +38,10 @@ export const routes: Routes = [
       {
         path: 'mes-sessions',
         loadComponent: () => import('./pages/my-sessions/my-sessions').then((m) => m.MySessions),
+      },
+      {
+        matcher: messagesMatcher,
+        loadComponent: () => import('./pages/messages/messages').then((m) => m.Messages),
       },
       {
         path: 'membres/:id/reserver',

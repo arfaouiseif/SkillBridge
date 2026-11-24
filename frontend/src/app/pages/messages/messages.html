@@ -1,0 +1,107 @@
+<main class="chat" [class.has-active]="activeId() !== null">
+  <aside class="chat__list">
+    <span class="eyebrow">Conversations</span>
+
+    @if (listError()) {
+      <p class="form-error" role="alert">{{ listError() }}</p>
+    } @else if (listLoading()) {
+      <p class="chat__state">Chargement…</p>
+    } @else if (conversations().length === 0) {
+      <p class="chat__state">
+        Aucune conversation pour l'instant. Ouvre le profil d'un membre depuis
+        <a class="link" routerLink="/explorer">Explorer</a> pour lui écrire.
+      </p>
+    } @else {
+      <ul class="chat__convs">
+        @for (c of conversations(); track c.id) {
+          <li>
+            <a class="conv" [routerLink]="['/messages', c.id]" [class.is-active]="c.id === activeId()">
+              <span class="conv__top">
+                <span class="conv__name">
+                  {{ c.otherUser.name }}
+                  @if (c.otherUser.online) {
+                    <span class="dot" title="En ligne" aria-label="En ligne"></span>
+                  }
+                </span>
+                @if (c.unreadCount > 0) {
+                  <span class="conv__new">{{ c.unreadCount }} {{ c.unreadCount > 1 ? 'nouveaux' : 'nouveau' }}</span>
+                }
+              </span>
+              <span class="conv__preview">
+                @if (c.lastMessage; as last) {
+                  {{ last.senderId === meId() ? 'Toi : ' : '' }}{{ last.body }}
+                } @else {
+                  Aucun message
+                }
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  </aside>
+
+  <section class="chat__thread">
+    @if (activeId() === null) {
+      <p class="chat__placeholder">Choisis une conversation pour commencer.</p>
+    } @else {
+      <header class="thread__head">
+        <a class="thread__back" routerLink="/messages" aria-label="Retour aux conversations">←</a>
+        @if (active(); as c) {
+          <a class="thread__name" [routerLink]="['/membres', c.otherUser.id]">{{ c.otherUser.name }}</a>
+          <span class="thread__status">
+            {{ otherTyping() ? 'écrit…' : c.otherUser.online ? 'en ligne' : 'hors ligne' }}
+          </span>
+        }
+      </header>
+
+      <div class="thread__body" #thread>
+        @if (threadError()) {
+          <p class="form-error" role="alert">{{ threadError() }}</p>
+        } @else if (threadLoading()) {
+          <p class="chat__state">Chargement…</p>
+        } @else {
+          @if (hasMore()) {
+            <button type="button" class="thread__older" [disabled]="loadingOlder()" (click)="loadOlder()">
+              {{ loadingOlder() ? 'Chargement…' : 'Messages précédents' }}
+            </button>
+          }
+          @for (item of items(); track item.message.id) {
+            @if (item.day) {
+              <p class="thread__day">{{ item.day }}</p>
+            }
+            <div class="msg" [class.is-mine]="item.mine">
+              <span class="msg__meta">
+                {{ item.mine ? 'Toi' : active()?.otherUser?.name }} · {{ item.time }}{{ item.mine && item.message.readAt ? ' · Lu' : '' }}
+              </span>
+              <p class="msg__body">{{ item.message.body }}</p>
+            </div>
+          } @empty {
+            <p class="chat__state">Aucun message. Dis bonjour !</p>
+          }
+        }
+      </div>
+
+      @if (!threadError()) {
+        <form class="composer" (submit)="$event.preventDefault(); send()">
+          @if (sendError()) {
+            <p class="form-error" role="alert">{{ sendError() }}</p>
+          }
+          <div class="composer__row">
+            <textarea
+              class="composer__input"
+              rows="1"
+              maxlength="2000"
+              placeholder="Écrire un message…"
+              aria-label="Écrire un message"
+              [value]="draft()"
+              (input)="onInput($any($event.target).value)"
+              (keydown.enter)="onEnter($event)"
+            ></textarea>
+            <button class="composer__send" type="submit" [disabled]="sending() || !draft().trim()">Envoyer</button>
+          </div>
+        </form>
+      }
+    }
+  </section>
+</main>
