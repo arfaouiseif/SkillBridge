@@ -18,6 +18,8 @@ tags:
   - name: Availability
   - name: Sessions
   - name: Chat
+  - name: Reviews
+  - name: Recommendations 
 
 paths:
   /auth/register:
@@ -623,7 +625,171 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'              
+                $ref: '#/components/schemas/Error'
+  /sessions/{id}/review:
+    post:
+      tags: [Reviews]
+      summary: Review a completed session
+      description: |
+        Only the learner of a `completed` session can review it, and only once. The review is
+        about the teacher: it updates their `averageRating` and `reviewCount`.
+        Reviews cannot be edited or deleted in this version.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReviewRequest'
+      responses:
+        '201':
+          description: Review saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Only the learner of the session can review it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Session not found, or the user is not a participant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: The session is not completed, or it was already reviewed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/{id}/reviews:
+    get:
+      tags: [Reviews]
+      summary: Reviews received by a user as a teacher
+      description: Most recent first.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        '200':
+          description: A page of reviews
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReviews'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /recommendations/top-teachers:
+    get:
+      tags: [Recommendations]
+      summary: Top-rated teachers of a skill
+      description: |
+        Users who teach the skill (the signed-in user excluded), best first.
+        They are ranked by a weighted rating, so that a single 5-star review does not beat
+        many good ones:
+
+        weightedRating = (sum of ratings + 3 x 3.5) / (number of reviews + 3)
+
+        A teacher without reviews therefore scores 3.5. Ties are broken by number of
+        reviews (more first), then by name.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: skill
+          in: query
+          required: true
+          description: Skill id
+          schema: { type: integer }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        '200':
+          description: Teachers, best first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TopTeacher'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Skill not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /recommendations/for-you:
+    get:
+      tags: [Recommendations]
+      summary: Recommended users for the signed-in user
+      description: |
+        The same candidates as `GET /matches` (users with at least one skill overlap),
+        re-ranked with their reputation and availability.
+
+        score = 0.6 x matchScore + 0.3 x ratingScore + 0.1 x availabilityScore, rounded
+
+        - `matchScore`: the score defined in `GET /matches` (0 to 100).
+        - `ratingScore` = (weightedRating - 1) / 4 x 100, with the weighted rating defined
+          in `GET /recommendations/top-teachers`.
+        - `availabilityScore`: 100 if the user has at least one weekly availability window, otherwise 0.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        '200':
+          description: Recommended users, best first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecommendedUser'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'                            
 
 components:
   securitySchemes:
@@ -794,7 +960,7 @@ components:
             $ref: '#/components/schemas/UserSkill'
     PublicUser:
       type: object
-      required: [id, name, skills]
+      required: [id, name, skills, averageRating, reviewCount]
       properties:
         id:
           type: integer
@@ -816,6 +982,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UserSkill'
+        averageRating:
+          type: number
+          nullable: true
+          description: average of the reviews as a teacher , rounded to one dec 
+          example: 4.6
+        reviewCount:
+          type: integer
+          description: Number of the reviews received as a teacher     
 
     PaginatedUsers:
       type: object
@@ -920,7 +1094,7 @@ components:
 
     Session:
       type: object
-      required: [id, teacher, learner, skill, startAt, endAt, status, createdAt]
+      required: [id, teacher, learner, skill, startAt, endAt, status, createdAt, hasReview]
       properties:
         id:
           type: integer
@@ -949,6 +1123,9 @@ components:
         createdAt:
           type: string
           format: date-time
+        hasReview:
+          type: boolean
+          description: true once the learner has reviewed the session 
 
     CreateSessionRequest:
       type: object
@@ -1064,6 +1241,98 @@ components:
       properties:
         updated:
           type: integer
+    ReviewTag:
+      type: string
+      enum: [clear_explanations, patient, well_prepared, friendly, flexible, practical]
+
+    Review:
+      type: object
+      required: [id, sessionId, rating, comment, tags, createdAt, learner, skill]
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: integer
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewTag'
+        createdAt:
+          type: string
+          format: date-time
+        learner:
+          $ref: '#/components/schemas/UserSummary'
+        skill:
+          $ref: '#/components/schemas/Skill'
+
+    CreateReviewRequest:
+      type: object
+      required: [rating]
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          maxLength: 500
+          nullable: true
+        tags:
+          type: array
+          maxItems: 4
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/ReviewTag'
+
+    PaginatedReviews:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+
+    TopTeacher:
+      type: object
+      required: [user, score]
+      properties:
+        user:
+          $ref: '#/components/schemas/PublicUser'
+        score:
+          type: number
+          minimum: 1
+          maximum: 5
+          description: Weighted rating, rounded to one decimal
+          example: 4.3
+
+    RecommendedUser:
+      type: object
+      required: [user, score, matchScore]
+      properties:
+        user:
+          $ref: '#/components/schemas/PublicUser'
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        matchScore:
+          type: integer
+          minimum: 0
+          maximum: 100      
     Error:
       type: object
       required: [message]
